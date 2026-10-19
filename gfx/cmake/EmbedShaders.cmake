@@ -1,0 +1,6 @@
+file(READ "${VERTEX}" vertex)
+file(READ "${FRAGMENT}" fragment)
+if(NOT DEFINED SHADER_NAMESPACE)
+    set(SHADER_NAMESPACE "idk::gfx::detail")
+endif()
+file(WRITE "${OUTPUT}" "// Generated from Slang. Do not edit.\n#pragma once\nnamespace ${SHADER_NAMESPACE} {\ninline constexpr char DefaultVertex[] = R\"IDKGLSL(${vertex})IDKGLSL\";\ninline constexpr char DefaultFragment[] = R\"IDKGLSL(${fragment})IDKGLSL\";\n}\n")

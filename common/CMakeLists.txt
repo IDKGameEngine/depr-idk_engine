@@ -22,3 +22,5 @@ target_sources(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/VideoManager.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/EngineAPI.cpp"
 )
+
+set_source_files_properties(src/platform/VideoManager.cpp PROPERTIES COMPILE_OPTIONS "-fno-exceptions")

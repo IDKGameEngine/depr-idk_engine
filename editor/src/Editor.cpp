@@ -1,142 +1,156 @@
 #include "idk/editor/Editor.hpp"
 #include "idk/gfx/RenderEngine.hpp"
 #include "idk/EngineAPI.hpp"
-
 #include <imgui.h>
+#include <ImGuizmo.h>
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_opengl3.h>
-
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_opengl.h>
 
-
-
-void idk::editor::EditorApplication::onInit(EngineAPI &api)
+namespace idk::editor
 {
-    api.mEvent->addGenericCallback(onGenericEventCallback);
-
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
-
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    //ImGui::StyleColorsLight();
-
-    // Setup scaling
-    float main_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
-    ImGuiStyle& style = ImGui::GetStyle();
-    style.ScaleAllSizes(main_scale);        // Bake a fixed style scale. (until we have a solution for dynamic style scaling, changing this requires resetting Style + calling this again)
-    style.FontScaleDpi = main_scale;        // Set initial font scale. (in docking branch: using io.ConfigDpiScaleFonts=true automatically overrides this for every window depending on the current monitor)
-    io.ConfigDpiScaleFonts = true;          // [Experimental] Automatically overwrite style.FontScaleDpi in Begin() when Monitor DPI changes. This will scale fonts but _NOT_ scale sizes/padding for now.
-    io.ConfigDpiScaleViewports = true;      // [Experimental] Scale Dear ImGui and Platform Windows when Monitor DPI changes.
-
-    // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    namespace
     {
-        style.WindowRounding = 0.0f;
-        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }
-
-    auto *ren = api.getService<idk::gfx::RenderEngine>();
-    ImGui_ImplSDL3_InitForOpenGL((SDL_Window*)(ren->mWinCtx), (SDL_GLContext)(ren->mGlCtx));
-    ImGui_ImplOpenGL3_Init(nullptr);
-}
-
-
-void idk::editor::EditorApplication::onShutdown(EngineAPI&)
-{
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL3_Shutdown();
-    ImGui::DestroyContext();
-}
-
-
-void idk::editor::EditorApplication::onPreRender(EngineAPI&)
-{
-    static bool show_demo_window = true;
-    static bool show_another_window = false;
-    static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-    ImGuiIO &io = ImGui::GetIO();
-
-    // Start the Dear ImGui frame
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL3_NewFrame();
-    ImGui::NewFrame();
-
-    // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-    if (show_demo_window)
-    {
-        ImGui::ShowDemoWindow(&show_demo_window);
-    }
-
-    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-    {
-        static float f = 0.0f;
-        static int counter = 0;
-
-        ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-        ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-        ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-        ImGui::Checkbox("Another Window", &show_another_window);
-
-        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-        ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-        if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+        bool initializeGui(gfx::RenderEngine& renderer)
         {
-            counter++;
+            IMGUI_CHECKVERSION();
+            ImGui::CreateContext();
+            ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+            ImGui::StyleColorsDark();
+            float scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
+            if (scale <= 0)
+                scale = 1;
+            ImGui::GetStyle().ScaleAllSizes(scale);
+            ImGui::GetStyle().FontScaleDpi = scale;
+            ImGui::GetIO().ConfigDpiScaleFonts = true;
+            if (!ImGui_ImplSDL3_InitForOpenGL(static_cast<SDL_Window*>(renderer.GetWindowHandle()),
+                                              renderer.GetContextHandle()))
+            {
+                ImGui::DestroyContext();
+                return false;
+            }
+            if (!ImGui_ImplOpenGL3_Init("#version 460 core"))
+            {
+                ImGui_ImplSDL3_Shutdown();
+                ImGui::DestroyContext();
+                return false;
+            }
+            return true;
         }
+    } // namespace
 
-        ImGui::SameLine();
-        ImGui::Text("counter = %d", counter);
-
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::End();
-    }
-
-    // 3. Show another simple window.
-    if (show_another_window)
+    void EditorApplication::onInit(EngineAPI& api)
     {
-        ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-        ImGui::Text("Hello from another window!");
-        if (ImGui::Button("Close Me"))
+        auto* renderer = api.getService<gfx::RenderEngine>();
+        if (!renderer || !renderer->IsInitialized() || !initializeGui(*renderer))
         {
-            show_another_window = false;
+            api.quit();
+            return;
         }
-        ImGui::End();
+        mInitialized = true;
+        api.mEvent->addGenericCallback(onGenericEventCallback);
+
+        // Fixed process storage backs the session's borrowed geometry spans.
+        static EditorSession::Storage storage;
+        if (!mSession.initialize(storage))
+        {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not initialize editor: %s", mSession.status());
+            api.quit();
+            return;
+        }
+        if (!mPreview.initialize(*renderer, mSession.document()))
+        {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not initialize editor preview resources");
+            api.quit();
+            return;
+        }
+        renderer->SetClearColor({.075f, .085f, .105f, 1});
+        SDL_SetWindowTitle(static_cast<SDL_Window*>(renderer->GetWindowHandle()), "idk - Shape model editor");
+        mSession.addShape(asset::ShapeKind::Box);
     }
 
-}
+    void EditorApplication::onShutdown(EngineAPI& api)
+    {
+        mUI.shutdown();
+        if (!mInitialized)
+            return;
+        if (auto* renderer = api.getService<gfx::RenderEngine>())
+            mPreview.shutdown(*renderer);
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplSDL3_Shutdown();
+        ImGui::DestroyContext();
+        mInitialized = false;
+    }
 
+    void EditorApplication::importModel(const EditorAction& action, gfx::RenderEngine& renderer)
+    {
+        EditorSession::ImportCandidate candidate;
+        if (!mSession.prepareImport(action.path, action.replace, candidate))
+        {
+            mUI.showImportError(mSession.status());
+            return;
+        }
+        const char* error = nullptr;
+        if (!mPreview.rebuild(renderer, candidate.document, error))
+        {
+            mUI.showImportError(error);
+            return;
+        }
+        mSession.commitImport(candidate, action.path);
+        mViewport.frameAll(mSession.document());
+    }
 
-void idk::editor::EditorApplication::onMidRender(EngineAPI&)
-{
-    // Rendering
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    void EditorApplication::execute(const EditorAction& action, gfx::RenderEngine& renderer)
+    {
+        switch (action.type)
+        {
+            case EditorAction::Type::None:
+                break;
+            case EditorAction::Type::Clear:
+                mPreview.clear(renderer);
+                mSession.clear();
+                mViewport.resetCamera();
+                break;
+            case EditorAction::Type::ChooseImportFile:
+                mUI.chooseImportFile(static_cast<SDL_Window*>(renderer.GetWindowHandle()));
+                break;
+            case EditorAction::Type::Import:
+                importModel(action, renderer);
+                break;
+            case EditorAction::Type::Export:
+                if (mSession.exportModel(action.path, action.overwrite) == EditorSession::ExportResult::AlreadyExists)
+                    mUI.confirmOverwrite(action.path);
+                break;
+        }
+    }
 
-    // // Update and Render additional Platform Windows
-    // // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
-    // //  For this specific demo app we could also call SDL_GL_MakeCurrent(window, gl_context) directly)
-    // if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    // {
-    //     SDL_Window* backup_current_window = SDL_GL_GetCurrentWindow();
-    //     SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
-    //     ImGui::UpdatePlatformWindows();
-    //     ImGui::RenderPlatformWindowsDefault();
-    //     SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
-    // }
-}
+    void EditorApplication::onPreRender(EngineAPI& api)
+    {
+        if (!mInitialized)
+            return;
+        auto& renderer = *api.getService<gfx::RenderEngine>();
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDL3_NewFrame();
+        ImGui::NewFrame();
+        ImGuizmo::BeginFrame();
+        auto action = mUI.draw(mSession, mViewport, renderer);
+        execute(action, renderer);
+        const char* error = nullptr;
+        if (!mPreview.submit(renderer, mSession.document(), error))
+            mSession.setStatus(error);
+    }
 
+    void EditorApplication::onMidRender(EngineAPI&)
+    {
+        if (!mInitialized)
+            return;
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
 
-void idk::editor::EditorApplication::onGenericEventCallback(idk::EngineAPI&, const void *event)
-{
-    ImGui_ImplSDL3_ProcessEvent((const SDL_Event*)event);
-}
+    void EditorApplication::onGenericEventCallback(EngineAPI&, const void* event)
+    {
+        if (ImGui::GetCurrentContext())
+            ImGui_ImplSDL3_ProcessEvent(static_cast<const SDL_Event*>(event));
+    }
+} // namespace idk::editor

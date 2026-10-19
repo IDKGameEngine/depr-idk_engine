@@ -3,19 +3,11 @@
 //
 // Shared C++ / Slang header — GPU resource binding registry
 //
-// OpenGL 4.6 + SPIR-V: descriptor sets do not exist; all resources share
-// one flat binding namespace per pipeline. We partition it explicitly:
-//
-//   Binding range  │ Resource class        │ Max slots
-//   ───────────────┼───────────────────────┼──────────
-//    [ 0 … 15]     │ Uniform buffers (UBO) │ 16
-//    [16 … 31]     │ Storage buffers (SSBO)│ 16
-//    [32 … 47]     │ Image load/store      │ 16
-//    [48 … 63]     │ (reserved / samplers) │ 16
-//
-// C++  side: use BIND_IDX with glBindBufferBase / glBindImageTexture
-// Slang side: use the UniformBufferRO / StorageBufferR[OW] / Image* macros
-//
+// OpenGL has independent UBO, SSBO, image and texture-unit namespaces.
+// Keep bindings low and validate device limits. The built-in material uses
+// UBO 2 (camera), UBO 3 (draw), UBO 4 (material), texture unit 5 (albedo).
+// Distinct compiler bindings also avoid Vulkan-style Slang binding collisions.
+// GPU structs use std140 UBO / std430 SSBO and column-major matrices.
 
 #ifndef IDK_GFX_SLANG_HPP
 #define IDK_GFX_SLANG_HPP
@@ -23,41 +15,43 @@
 #ifdef __cplusplus
     #include "defs.hpp"
     #define IDK_SLANG_NAMESPACE idk::gfx::slang
+    #define IDK_GPU_CONST static constexpr
 #else
     #include "defs.slang"
     #define IDK_SLANG_NAMESPACE idk
+    #define IDK_GPU_CONST static const
 #endif
 
 
 #define UBO_STRUCT(Idx_, Content_) \
 struct UniformBuffer0##Idx_ \
 { \
-    static constexpr const uint32_t BIND_IDX = Idx_; \
+    IDK_GPU_CONST uint32_t BIND_IDX = Idx_; \
     Content_ \
 }
 
 #define SSBO_STRUCT(Idx_, Content_) \
 struct StorageBuffer0##Idx_ \
 { \
-    static constexpr const uint32_t BIND_IDX = Idx_; \
+    IDK_GPU_CONST uint32_t BIND_IDX = Idx_; \
     Content_ \
 }
 
 
 namespace IDK_SLANG_NAMESPACE
 {
-    static constexpr const uint32_t UBO_BIND_BASE  = 8;
-    static constexpr const uint32_t SSBO_BIND_BASE = 16;
-    static constexpr const uint32_t IMG_BIND_BASE  = 32;
+    IDK_GPU_CONST uint32_t UBO_BIND_BASE  = 0;
+    IDK_GPU_CONST uint32_t SSBO_BIND_BASE = 0;
+    IDK_GPU_CONST uint32_t IMG_BIND_BASE  = 0;
 
     struct GlobalData
     {
-        static constexpr const uint32_t BIND_IDX = UBO_BIND_BASE + 0;
+        IDK_GPU_CONST uint32_t BIND_IDX = UBO_BIND_BASE + 0;
     };
 
     struct PerFrameData
     {
-        static constexpr const uint32_t BIND_IDX = UBO_BIND_BASE + 1;
+        IDK_GPU_CONST uint32_t BIND_IDX = UBO_BIND_BASE + 1;
         float prevTime;
         float currTime;
         float deltaTime;
@@ -68,21 +62,36 @@ namespace IDK_SLANG_NAMESPACE
 
     struct PerCameraData
     {
-        static constexpr const uint32_t BIND_IDX = UBO_BIND_BASE + 2;
+        IDK_GPU_CONST uint32_t BIND_IDX = UBO_BIND_BASE + 2;
         mat4 View;
         mat4 Proj;
     };
 
 
-    static constexpr const uint32_t BIND_NBODY_IN  = SSBO_BIND_BASE + 4;
-    static constexpr const uint32_t BIND_NBODY_OUT = SSBO_BIND_BASE + 5;
+    struct PerDrawData
+    {
+        IDK_GPU_CONST uint32_t BIND_IDX = 3;
+        mat4 Model;
+    };
+
+    struct MaterialData
+    {
+        IDK_GPU_CONST uint32_t BIND_IDX = 4;
+        vec4 baseColor;
+        vec4 alpha; // mode: 0 opaque, 1 mask, 2 blend; cutoff in y
+    };
+
+    IDK_GPU_CONST uint32_t BIND_ALBEDO = 5;
+
+    IDK_GPU_CONST uint32_t BIND_NBODY_IN  = SSBO_BIND_BASE + 4;
+    IDK_GPU_CONST uint32_t BIND_NBODY_OUT = SSBO_BIND_BASE + 5;
 
     struct NBodyVertex
     {
-        static constexpr const float    MIN_MASS   = 16.0f;
-        static constexpr const float    MAX_MASS   = 512.0f;
-        static constexpr const uint32_t MAX_BODIES = 1*1024;
-        static constexpr const uint32_t GROUP_SIZE = 32;
+        IDK_GPU_CONST float    MIN_MASS   = 16.0f;
+        IDK_GPU_CONST float    MAX_MASS   = 512.0f;
+        IDK_GPU_CONST uint32_t MAX_BODIES = 1*1024;
+        IDK_GPU_CONST uint32_t GROUP_SIZE = 32;
         
         vec4 pos;
         vec4 vel;
@@ -94,7 +103,7 @@ namespace IDK_SLANG_NAMESPACE
     //     NBodyVertex verts[NBodyVertex::MAX_BODIES];
     // };
 
-    static constexpr const int AUTOMATA_WIDTH = 1024;
+    IDK_GPU_CONST int AUTOMATA_WIDTH = 1024;
 
 } // namespace IDK_SLANG_NAMESPACE
 

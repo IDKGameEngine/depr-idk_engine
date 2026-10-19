@@ -1,0 +1,134 @@
+{
+  "asset": {
+    "version": "2.0"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "data:application/octet-stream;base64,AAAAvwAAAL8AAAAAAAAAPwAAAL8AAAAAAAAAAAAAAD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AACAP83MTD7NzEw+AACAP83MTD4AAIA/zcxMPgAAgD/NzEw+zcxMPgAAgD8AAIA/",
+      "byteLength": 120
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 36
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 36,
+      "byteLength": 36
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 72,
+      "byteLength": 48
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC3",
+      "min": [
+        -0.5,
+        -0.5,
+        0
+      ],
+      "max": [
+        0.5,
+        0.5,
+        0
+      ]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC4"
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "COLOR_0": 2
+          },
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.7,
+          0.8,
+          0.9,
+          1
+        ],
+        "metallicFactor": 0.25,
+        "roughnessFactor": 0.6
+      },
+      "alphaMode": "MASK",
+      "alphaCutoff": 0.2,
+      "doubleSided": true
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Group",
+      "translation": [
+        2,
+        0,
+        0
+      ],
+      "children": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "Mirrored triangle",
+      "translation": [
+        -2,
+        0,
+        0
+      ],
+      "scale": [
+        -1,
+        1,
+        1
+      ],
+      "mesh": 0
+    },
+    {
+      "name": "Triangle instance",
+      "translation": [
+        -1,
+        0,
+        0
+      ],
+      "mesh": 0
+    }
+  ]
+}

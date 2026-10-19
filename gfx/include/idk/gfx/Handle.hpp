@@ -2,6 +2,7 @@
 #pragma once
  
 #include <cstdint>
+#include <limits>
  
 namespace idk::gfx
 {
@@ -13,10 +14,11 @@ namespace idk::gfx
     template <typename Tag>
     struct Handle
     {
-        uint32_t id  = 0;   // slot index into the owning Pool
-        uint32_t gen = 0;   // generation, guards against stale handles
+        uint32_t id  = std::numeric_limits<uint32_t>::max();
+        uint32_t gen = std::numeric_limits<uint32_t>::max();
  
-        bool isValid() const { return gen != 0; }
+        // Only the pool can establish liveness. Generation zero is valid in libidk.
+        bool isValid() const { return id != std::numeric_limits<uint32_t>::max(); }
  
         friend bool operator==(const Handle&, const Handle&) = default;
     };
@@ -26,10 +28,14 @@ namespace idk::gfx
     struct ShaderTag       {};
     struct MaterialTag     {};
     struct RenderTargetTag {};
+    struct SamplerTag      {};
+    struct ModelTag        {};
  
     using MeshHandle         = Handle<MeshTag>;
     using TextureHandle      = Handle<TextureTag>;
     using ShaderHandle       = Handle<ShaderTag>;
     using MaterialHandle     = Handle<MaterialTag>;
     using RenderTargetHandle = Handle<RenderTargetTag>;
+    using SamplerHandle      = Handle<SamplerTag>;
+    using ModelHandle        = Handle<ModelTag>;
 }

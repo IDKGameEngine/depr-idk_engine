@@ -1,21 +1,31 @@
 #pragma once
 
 #include "libidk/Service.hpp"
-
+#include "EditorSession.hpp"
+#include "EditorUI.hpp"
+#include "EditorViewport.hpp"
+#include "ScenePreview.hpp"
 
 namespace idk::editor
 {
-    class EditorApplication: public idk::Service
+    // Engine lifecycle and command coordination. Components own their own state.
+    class EditorApplication final : public idk::Service
     {
-    public:
-        virtual void onInit(idk::EngineAPI&) final;
-        virtual void onShutdown(idk::EngineAPI&) final;
-        virtual void onPreRender(idk::EngineAPI&) final;
-        virtual void onMidRender(idk::EngineAPI&) final;
+      public:
+        void onInit(idk::EngineAPI&) override;
+        void onShutdown(idk::EngineAPI&) override;
+        void onPreRender(idk::EngineAPI&) override;
+        void onMidRender(idk::EngineAPI&) override;
 
-    private:
+      private:
+        bool mInitialized = false;
+        EditorSession mSession;
+        ScenePreview mPreview;
+        EditorViewport mViewport;
+        EditorUI mUI;
+
+        void execute(const EditorAction&, gfx::RenderEngine&);
+        void importModel(const EditorAction&, gfx::RenderEngine&);
         static void onGenericEventCallback(idk::EngineAPI&, const void*);
-
     };
-}
-
+} // namespace idk::editor

@@ -1,115 +1,87 @@
 #pragma once
 
 #include "Handle.hpp"
-#include "libidk/gpu//gl.hpp"
-#include "libidk/dsa/List.hpp"
-
-// #include <glm
-
+#include <glm/glm.hpp>
+#include <cstddef>
+#include <span>
+#include <optional>
+#include <string_view>
 
 namespace idk::gfx
 {
-    // ---------------------------------------------------------------
-    // Resource descriptors: how other systems describe what they want,
-    // without knowing how it maps onto OpenGL.
-    // ---------------------------------------------------------------
- 
-    enum class VertexAttribType : uint8_t
-    {
-        Float,
-        Float2,
-        Float3,
-        Float4,
-        UByte4Norm,
-    };
- 
+    enum class VertexAttribType : uint8_t { Float, Float2, Float3, Float4, UByte4Norm };
     struct VertexAttribute
     {
-        uint32_t         location = 0;
-        VertexAttribType type     = VertexAttribType::Float3;
-        uint32_t         offset   = 0;
+        uint32_t location = 0;
+        VertexAttribType type = VertexAttribType::Float3;
+        uint32_t offset = 0;
     };
- 
+
+    // Input spans/pointers are consumed synchronously by Create*.
     struct MeshDesc
     {
-        const void*     vertexData   = nullptr;
-        size_t          vertexCount  = 0;
-        size_t          vertexStride = 0;
- 
-        const uint32_t* indices      = nullptr;
-        size_t          indexCount   = 0;
- 
-        // idk::dsa::List<VertexAttribute> attributes;
+        const void* vertexData = nullptr;
+        size_t vertexCount = 0;
+        size_t vertexStride = 0;
+        const uint32_t* indices = nullptr;
+        size_t indexCount = 0;
+        std::span<const VertexAttribute> attributes;
     };
- 
-    enum class TexFormat : uint8_t
-    {
-        R8,
-        RGB8,
-        RGBA8,
-        RGBA32F,
-    };
- 
+
+    enum class TexFormat : uint8_t { R8, RGB8, RGBA8, SRGBA8, RGBA16F, RGBA32F };
     struct TextureDesc
     {
-        uint32_t    width      = 0;
-        uint32_t    height     = 0;
-        TexFormat   format     = TexFormat::RGBA8;
-        const void* pixels     = nullptr;
-        bool        genMipmaps = true;
+        uint32_t width = 0;
+        uint32_t height = 0;
+        TexFormat format = TexFormat::RGBA8;
+        // Tightly packed rows; floating point formats accept float components.
+        const void* pixels = nullptr;
+        bool genMipmaps = true;
     };
- 
+
+    enum class TextureFilter : uint8_t { Nearest, Linear };
+    enum class TextureWrap : uint8_t { Repeat, ClampToEdge, MirroredRepeat };
+    enum class TextureMinFilter : uint8_t { Default, Nearest, Linear, NearestMipmapNearest, LinearMipmapNearest, NearestMipmapLinear, LinearMipmapLinear };
+    struct SamplerDesc
+    {
+        TextureFilter filter = TextureFilter::Linear;
+        TextureWrap wrap = TextureWrap::Repeat;
+        std::optional<TextureWrap> wrapT; // Defaults to wrap for existing callers.
+        TextureMinFilter minFilter = TextureMinFilter::Default;
+    };
+
     struct ShaderDesc
     {
         std::string_view vertSrc;
         std::string_view fragSrc;
+        std::string_view label;
     };
- 
+
+    enum class BlendMode : uint8_t { Opaque, Alpha, Mask };
     struct MaterialDesc
     {
         ShaderHandle shader;
-        // TODO: named uniform/texture bindings once something needs them.
+        TextureHandle texture; // Invalid selects a white fallback texture.
+        SamplerHandle sampler; // Invalid selects a linear repeat sampler.
+        glm::vec4 baseColor{1.0f};
+        BlendMode blend = BlendMode::Opaque;
+        float alphaCutoff = 0.5f;
+        bool depthTest = true;
+        bool depthWrite = true;
+        bool doubleSided = false;
     };
- 
-    // ---------------------------------------------------------------
-    // Per-frame submission
-    // ---------------------------------------------------------------
- 
+
     struct Camera
     {
-        glm::mat4 view = glm::mat4(1.0f);
-        glm::mat4 proj = glm::mat4(1.0f);
+        glm::mat4 view{1.0f};
+        // OpenGL's default -1..1 clip depth; no Vulkan Y flip.
+        glm::mat4 proj{1.0f};
     };
- 
+
     struct DrawItem
     {
-        MeshHandle     mesh;
+        MeshHandle mesh;
         MaterialHandle material;
-        glm::mat4      transform = glm::mat4(1.0f);
-    };
-
-
-    class RenderEngine: public idk::Service
-    {
-    public:
-        virtual void onInit(EngineAPI&) final;
-        virtual void onShutdown(EngineAPI&) final;
-        virtual void onPreRender(EngineAPI&) final;
-        virtual void onMidRender(EngineAPI&) final;
-        virtual void onPostRender(EngineAPI&) final;
-
-
-        MeshHandle     CreateMesh(const MeshDesc&);
-        void           DestroyMesh(MeshHandle);
-        TextureHandle  CreateTexture(const TextureDesc&);
-        void           DestroyTexture(TextureHandle);
-        ShaderHandle   CreateShader(const ShaderDesc&);
-        MaterialHandle CreateMaterial(const MaterialDesc&);
-
-    // private:
-        void      *mWinCtx;
-        void      *mGlCtx;
-        uint32_t   mDummyVao;
-
+        glm::mat4 transform{1.0f};
     };
 }
