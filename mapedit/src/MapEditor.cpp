@@ -125,6 +125,14 @@ namespace idk::mapedit
             return;
         ImGui::SeparatorText(RoleName(mSession.role(mSession.selection())));
         ImGui::InputText("Name", object->name, sizeof(object->name));
+        if (mSession.role(mSession.selection()) == ObjectRole::Exit)
+        {
+            auto& destination = mSession.destination();
+            ImGui::InputText("Next level", destination.path, sizeof(destination.path));
+            ImGui::TextWrapped("Relative to the game's level root, e.g. level/next.idklvl. Leave empty to finish.");
+            if (!destination.valid())
+                ImGui::TextWrapped("Use a relative .idklvl path without dot segments.");
+        }
         ImGui::DragFloat3("Position", glm::value_ptr(object->position), .05f, -10000, 10000, "%.3f",
                           ImGuiSliderFlags_AlwaysClamp);
         ImGui::DragFloat3("Rotation", glm::value_ptr(object->rotation), .5f, -360, 360, "%.1f",

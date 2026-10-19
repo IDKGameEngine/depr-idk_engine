@@ -101,12 +101,14 @@ namespace idk::level
             char magic[8];
             std::memcpy(magic, Magic, 8);
             stream.bytes(magic, 8);
-            uint32_t version = 1, count = uint32_t(level.terrain.size());
+            uint32_t version = 2, count = uint32_t(level.terrain.size());
             stream.integer(version);
             stream.integer(count);
             auto entry = level.entry, exit = level.exit;
             stream.location(entry);
             stream.location(exit);
+            auto destination = level.destination;
+            stream.bytes(destination.path, sizeof(destination.path));
             for (const auto& object : level.terrain)
             {
                 char name[48];
@@ -145,6 +147,9 @@ namespace idk::level
 
     bool Level::validate(Error& error) const
     {
+        if (!destination.valid())
+            return error.set(
+                "Exit destination must be a relative .idklvl path without dot segments, or empty for completion.");
         if (terrain.empty() || terrain.size() > MaxTerrain || !locationValid(entry) || !locationValid(exit))
             return error.set("A runtime level requires terrain and valid entry/exit transforms.");
         size_t vertices = 0, indices = 0;
@@ -246,11 +251,14 @@ namespace idk::level
         stream.integer(version);
         stream.integer(count);
         Level candidate;
-        bool ok = stream.ok && !std::memcmp(magic, Magic, 8) && version == 1 && count > 0 && count <= Level::MaxTerrain;
+        bool ok = stream.ok && !std::memcmp(magic, Magic, 8) && (version == 1 || version == 2) && count > 0 &&
+                  count <= Level::MaxTerrain;
         if (ok)
         {
             stream.location(candidate.entry);
             stream.location(candidate.exit);
+            if (version == 2)
+                stream.bytes(candidate.destination.path, sizeof(candidate.destination.path));
             candidate.terrain = arena.array<Terrain>(count);
             ok = !arena.failed();
         }

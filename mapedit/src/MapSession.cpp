@@ -12,7 +12,7 @@ namespace idk::mapedit
     namespace
     {
         // Each record has fixed fields and bounded lines; no parser allocation.
-        bool readLine(FILE* file, char (&line)[256])
+        bool readLine(FILE* file, char (&line)[512])
         {
             if (!std::fgets(line, sizeof(line), file))
                 return false;
@@ -27,7 +27,7 @@ namespace idk::mapedit
 
         bool readVector(FILE* file, const char* field, float* values, unsigned count)
         {
-            char line[256];
+            char line[512];
             if (!readLine(file, line))
                 return false;
             size_t length = std::strlen(field);
@@ -49,7 +49,7 @@ namespace idk::mapedit
 
         bool readUnsignedFields(FILE* file, const char* field, std::span<uint32_t> values)
         {
-            char line[256];
+            char line[512];
             if (!readLine(file, line))
                 return false;
             size_t length = std::strlen(field);
@@ -71,13 +71,30 @@ namespace idk::mapedit
 
         bool readMap(FILE* file, MapSession& candidate)
         {
-            char line[256];
-            if (!readLine(file, line) || std::strcmp(line, "IDKMAP 1"))
+            char line[512];
+            if (!readLine(file, line))
                 return false;
+            bool version2 = !std::strcmp(line, "IDKMAP 2");
+            if (!version2 && std::strcmp(line, "IDKMAP 1"))
+                return false;
+            candidate.clear();
+            if (version2)
+            {
+                if (!readLine(file, line))
+                    return false;
+                if (std::strcmp(line, "destination"))
+                {
+                    if (std::strncmp(line, "destination ", 12) ||
+                        std::strlen(line + 12) >= asset::ExitDestination::Capacity)
+                        return false;
+                    std::memcpy(candidate.destination().path, line + 12, std::strlen(line + 12) + 1);
+                }
+                if (!candidate.destination().valid())
+                    return false;
+            }
             uint32_t count = 0;
             if (!readUnsignedFields(file, "objects", {&count, 1}) || count > editor::ShapeDocument::Capacity)
                 return false;
-            candidate.clear();
             for (unsigned i = 0; i < count; ++i)
             {
                 uint32_t fields[2]{};
@@ -111,7 +128,8 @@ namespace idk::mapedit
 
         bool writeMap(FILE* file, const MapSession& session)
         {
-            if (std::fprintf(file, "IDKMAP 1\nobjects %u\n", session.document().count()) < 0)
+            if (std::fprintf(file, "IDKMAP 2\ndestination%s%s\nobjects %u\n", session.destination().path[0] ? " " : "",
+                             session.destination().path, session.document().count()) < 0)
                 return false;
             for (uint32_t i = 0; i < editor::ShapeDocument::Capacity; ++i)
             {
@@ -216,7 +234,10 @@ namespace idk::mapedit
         if (mSelection == mEntry)
             mEntry = asset::NoIndex;
         if (mSelection == mExit)
+        {
             mExit = asset::NoIndex;
+            mDestination = {};
+        }
         ShapeSession::deleteSelection();
     }
 
@@ -224,10 +245,13 @@ namespace idk::mapedit
     {
         ShapeSession::clear();
         mEntry = mExit = asset::NoIndex;
+        mDestination = {};
     }
 
     bool MapSession::validate() const
     {
+        if (!mDestination.valid())
+            return false;
         for (uint32_t i = 0; i < editor::ShapeDocument::Capacity; ++i)
         {
             const auto* object = mDocument.get(i);
@@ -279,7 +303,8 @@ namespace idk::mapedit
     {
         if (!path || !*path || !validate())
         {
-            setStatus("Save requires a path, finite transforms, nonzero scales, and valid colours and names.");
+            setStatus(
+                "Save requires a path, finite transforms, nonzero scales, and valid colours, names and destination.");
             return SaveResult::Failed;
         }
         char temporary[1200];

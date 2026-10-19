@@ -21,6 +21,7 @@ namespace idk::level
         Level candidate;
         candidate.entry = {entry->position, entry->rotation, entry->scale};
         candidate.exit = {exit->position, exit->rotation, exit->scale};
+        candidate.destination = session.destination();
         candidate.terrain = arena.array<Terrain>(count - 2);
         if (arena.failed())
         {

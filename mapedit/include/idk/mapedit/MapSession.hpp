@@ -1,6 +1,7 @@
 #pragma once
 
 #include "idk/editor/ShapeSession.hpp"
+#include "idk/asset/ExitDestination.hpp"
 
 namespace idk::mapedit
 {
@@ -31,6 +32,10 @@ namespace idk::mapedit
         void deleteSelection() override;
         void clear() override;
 
+        asset::ExitDestination& destination() { return mDestination; }
+
+        const asset::ExitDestination& destination() const { return mDestination; }
+
         // Loading validates a complete candidate before replacing the scene.
         // Saving publishes a temporary file atomically in the same directory.
         bool load(const char* path);
@@ -39,6 +44,7 @@ namespace idk::mapedit
       private:
         uint32_t mEntry = asset::NoIndex;
         uint32_t mExit = asset::NoIndex;
+        asset::ExitDestination mDestination;
         bool validate() const;
     };
 

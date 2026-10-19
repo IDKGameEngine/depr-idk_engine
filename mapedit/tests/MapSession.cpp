@@ -117,6 +117,7 @@ namespace
         CHECK(session.document().pick({-10, .5f, 10}, {0, 0, -1}) == exit, "Exit marker cannot be picked");
 
         Temporary files;
+        std::snprintf(session.destination().path, sizeof(session.destination().path), "level/next room.idklvl");
         CHECK(files.create(), "Could not create test directory");
         CHECK(session.save(files.map) == MapSession::SaveResult::Saved, session.status());
         uint64_t original = hashFile(files.map);
@@ -124,6 +125,18 @@ namespace
         MapSession loaded = session;
         loaded.clear();
         CHECK(loaded.load(files.map), loaded.status());
+        CHECK(!std::strcmp(loaded.destination().path, session.destination().path),
+              "Exit destination did not roundtrip");
+        const char* invalidDestinations[] = {"/absolute.idklvl",   "../outside.idklvl",  "level/../outside.idklvl",
+                                             "./room.idklvl",      "level//room.idklvl", "level/room.idkmap",
+                                             "level\\room.idklvl", "room\n.idklvl"};
+        for (const char* destination : invalidDestinations)
+        {
+            std::snprintf(loaded.destination().path, sizeof(loaded.destination().path), "%s", destination);
+            CHECK(loaded.save(files.map, true) == MapSession::SaveResult::Failed, "Invalid exit destination was saved");
+            CHECK(hashFile(files.map) == original, "Invalid destination damaged the saved map");
+        }
+        loaded.destination() = session.destination();
         CHECK(loaded.document().count() == 6 && loaded.marker(ObjectRole::Entry) == entry &&
                   loaded.marker(ObjectRole::Exit) == exit,
               "Map roles or object count did not roundtrip");
@@ -170,7 +183,10 @@ namespace
                                     "scale 1 1 1\ncolour 1 1 1 1\n";
         const char* invalid[] = {
             "",
+            "IDKMAP 3\nobjects 0\n",
             "IDKMAP 2\nobjects 0\n",
+            "IDKMAP 2\ndestination ../outside.idklvl\nobjects 0\n",
+            "IDKMAP 2\ndestination wrong.idkmap\nobjects 0\n",
             "IDKMAP 1\nobjects 65\n",
             "IDKMAP 1\nobjects 1\n",
             "IDKMAP 1\nobjects 0\nextra",
@@ -195,6 +211,7 @@ namespace
             uint32_t selection = loaded.selection();
             CHECK(!loaded.load(files.malformed) && loaded.selection() == selection && loaded.document().count() == 7 &&
                       loaded.marker(ObjectRole::Exit) == exit &&
+                      !std::strcmp(loaded.destination().path, session.destination().path) &&
                       loaded.document().get(0)->scale == glm::vec3(1, .5f, 12),
                   "Failed load changed the level or selection");
         }
@@ -204,6 +221,30 @@ namespace
               "Partial import changed the live scene");
         CHECK(!loaded.load("/nonexistent-mapedit-directory/level.idkmap") && loaded.document().count() == 7,
               "Missing file changed the live scene");
+
+        MapSession legacy = loaded;
+        CHECK(writeText(files.malformed, "IDKMAP 1\nobjects 1\nobject 0 0\nname Old map\nposition 0 0 0\nrotation 0 0 "
+                                         "0\nscale 1 1 1\ncolour 1 1 1 1\n"),
+              "Cannot write legacy map");
+        CHECK(legacy.load(files.malformed) && !legacy.destination().path[0],
+              "Version 1 maps must load with no destination");
+        legacy = loaded;
+        legacy.select(exit);
+        legacy.deleteSelection();
+        CHECK(!legacy.destination().path[0], "Deleting exit must clear its destination");
+        legacy = loaded;
+        legacy.clear();
+        CHECK(!legacy.destination().path[0], "New map retained an exit destination");
+
+        MapSession bounded = loaded;
+        std::memset(bounded.destination().path, 'a', sizeof(bounded.destination().path));
+        std::memcpy(bounded.destination().path + 248, ".idklvl", 8);
+        CHECK(bounded.save(files.malformed, true) == MapSession::SaveResult::Saved && bounded.load(files.malformed) &&
+                  std::strlen(bounded.destination().path) == 255,
+              "Maximum-length destination did not roundtrip");
+        bounded.destination().path[255] = 'a';
+        CHECK(bounded.save(files.malformed, true) == MapSession::SaveResult::Failed,
+              "Unterminated destination was accepted");
 
         loaded.select(1);
         loaded.deleteSelection();

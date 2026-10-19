@@ -1,6 +1,7 @@
 #pragma once
 
 #include "idk/asset/Model.hpp"
+#include "idk/asset/ExitDestination.hpp"
 #include "libidk/memory/Arena.hpp"
 
 namespace idk::level
@@ -33,6 +34,7 @@ namespace idk::level
         static constexpr uint32_t MaxVertices = 32768;
         static constexpr uint32_t MaxIndices = 196608;
         Location entry, exit;
+        asset::ExitDestination destination;
         std::span<Terrain> terrain;
 
         bool validate(Error&) const;

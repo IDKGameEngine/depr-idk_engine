@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Level.hpp"
+#include "PhysicsWorld.hpp"
 #include "libidk/Types.hpp"
 
 namespace idk::level
@@ -11,7 +12,7 @@ namespace idk::level
     {
       public:
         ~Player();
-        bool initialize(const Level&, Error&);
+        bool initialize(PhysicsWorld&, Error&);
         void shutdown();
         void reset(glm::vec3 feet);
         void step(glm::vec3 horizontalVelocity, bool jump, float dt);
@@ -21,6 +22,5 @@ namespace idk::level
       private:
         struct Impl;
         Impl* mImpl = nullptr;
-        bool mOwnsFactory = false;
     };
 } // namespace idk::level

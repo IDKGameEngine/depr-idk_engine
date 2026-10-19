@@ -1,4 +1,5 @@
-IDKMAP 1
+IDKMAP 2
+destination level/finish.idklvl
 objects 8
 object 0 0
 name Ground

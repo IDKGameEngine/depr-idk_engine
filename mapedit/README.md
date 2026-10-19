@@ -47,9 +47,19 @@ format stores each object's role, primitive type, name, position, XYZ Euler
 rotation in degrees, signed nonzero scale, and RGBA colour. Marker identity is
 independent of its name. Files do not contain generated mesh buffers.
 
-The `IDKMAP 1` format begins with `objects N`, followed by N records:
+Select the exit marker to edit **Next level**, a compiled path relative to the
+game's installed `content` directory, for example `level/finish.idklvl`. Leave it
+empty to finish the run. Build destination maps separately; **Build & Play**
+compiles only the current document. Failed transitions leave the current level
+running and can be retried by leaving and re-entering the exit.
+
+New saves use `IDKMAP 2`, with a destination line before `objects N`, followed
+by N records:
 
 ```text
+IDKMAP 2
+destination level/finish.idklvl
+objects 1
 object 0 0
 name Floor
 position 0 -0.25 0
@@ -63,6 +73,10 @@ cylinder=2, plane=3. Entry uses a cylinder and exit uses a box. Names occupy a
 single line of at most 47 bytes; numbers must be finite. Files contain LF or
 CRLF line endings and end after the final record's newline. Unknown versions,
 duplicate markers, invalid records, and more than 64 objects are rejected.
+An empty destination is written as `destination` followed by a newline. Paths
+are at most 255 bytes and must be relative `.idklvl` paths without `.`/`..`
+components. Version 1 maps (without the destination line) remain readable and
+have no destination. Deleting the exit clears its destination.
 Use **Build level** to write a `.idklvl` runtime artifact, or **Build & Play** to
 launch the game with the current document, including unsaved changes. Builds
 require terrain, entry, and exit. **Stop playtest** closes the child game.

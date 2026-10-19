@@ -52,6 +52,7 @@ namespace
         session.selected()->rotation = {20, 45, 0};
         session.addShape(asset::ShapeKind::Cylinder);
         session.selected()->position = {-6, .5f, 3};
+        std::snprintf(session.destination().path, sizeof(session.destination().path), "level/next.idklvl");
         CHECK(Build(session, arena, level, error));
         CHECK(level.terrain.size() == 4);
         CHECK(level.entry.rotation.y == 45);
@@ -82,6 +83,7 @@ namespace
         CHECK(Load(path, read, result, error));
         CHECK(result.terrain.size() == 4);
         CHECK(result.entry.position == level.entry.position);
+        CHECK(!std::strcmp(result.destination.path, "level/next.idklvl"));
         for (size_t i = 0; i < 4; ++i)
         {
             CHECK(result.terrain[i].vertices.size() == level.terrain[i].vertices.size());
@@ -111,8 +113,21 @@ namespace
         size_t size = std::fread(bytes.data(), 1, bytes.size(), file);
         CHECK(!std::ferror(file));
         std::fclose(file);
+        // Version 1 had no 256-byte destination field after the two locations.
+        file = std::fopen(path, "wb");
+        CHECK(file);
+        auto version = bytes[8];
+        bytes[8] = 1;
+        CHECK(std::fwrite(bytes.data(), 1, 88, file) == 88);
+        CHECK(std::fwrite(bytes.data() + 344, 1, size - 344, file) == size - 344);
+        std::fclose(file);
+        bytes[8] = version;
+        Level legacy;
+        CHECK(Load(path, read, legacy, error));
+        CHECK(!legacy.destination.path[0] && legacy.terrain.size() == level.terrain.size());
+        read.rewind(mark);
         // Header version/count and terrain flags/counts/first position/first index.
-        const size_t corrupt[] = {0, 8, 12, 152, 156, 160, 164, 164 + 24 * 64};
+        const size_t corrupt[] = {0, 8, 12, 88, 408, 412, 416, 420, 420 + 24 * 64};
         for (auto offset : corrupt)
         {
             CHECK(offset + 4 < size);
@@ -120,6 +135,8 @@ namespace
                 std::array<unsigned char, 4>{bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3]};
             for (unsigned j = 0; j < 4; ++j)
                 bytes[offset + j] = 255;
+            if (offset == 88)
+                bytes[offset] = '/'; // Absolute destination paths are invalid.
             file = std::fopen(path, "wb");
             CHECK(file);
             CHECK(std::fwrite(bytes.data(), 1, size, file) == size);
@@ -143,8 +160,13 @@ namespace
         read.reset();
         CHECK(Load(path, read, result, error));
         {
+            PhysicsWorld world;
+            CHECK(world.initialize(error));
+            CHECK(world.prepareTerrain(result, error));
+            world.commitTerrain();
             Player player;
-            CHECK(player.initialize(result, error));
+            CHECK(player.initialize(world, error));
+            player.reset(result.entry.position);
             CHECK(glm::distance(player.position(), result.entry.position) < .001f);
             for (int i = 0; i < 120; ++i)
                 player.step({}, false, 1.0f / 60);
@@ -180,8 +202,13 @@ namespace
         arena.reset();
         CHECK(Build(session, arena, level, error));
         {
+            PhysicsWorld world;
+            CHECK(world.initialize(error));
+            CHECK(world.prepareTerrain(level, error));
+            world.commitTerrain();
             Player player;
-            CHECK(player.initialize(level, error));
+            CHECK(player.initialize(world, error));
+            player.reset(level.entry.position);
             for (int i = 0; i < 180; ++i)
                 player.step({}, false, 1.0f / 60);
             CHECK(player.grounded() && std::abs(player.position().y) < .05f);

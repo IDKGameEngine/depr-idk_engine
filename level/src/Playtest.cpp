@@ -9,7 +9,8 @@
 
 namespace idk::level
 {
-    Playtest::Playtest(const char* path, uint32_t frameLimit) : mPath(path), mFrameLimit(frameLimit)
+    Playtest::Playtest(const char* path, uint32_t frameLimit, const char* levelRoot)
+        : mPath(path), mRoot(levelRoot), mFrameLimit(frameLimit)
     {
     }
 
@@ -22,19 +23,19 @@ namespace idk::level
             api.quit();
             return;
         }
-        alignas(16) static std::byte data[4 * 1024 * 1024], scratch[64 * 1024];
-        idk::Arena arena(data), temporary(scratch);
+        static LevelRunner::Storage storage;
+        alignas(16) static std::byte scratch[64 * 1024];
+        idk::Arena temporary(scratch);
         Error error;
-        asset::Model model;
-        if (!Load(mPath, arena, mLevel, error) || !mLevel.model(temporary, model, error) ||
-            !mPlayer.initialize(mLevel, error))
+        if (!mPhysics.initialize(error) || !mPlayer.initialize(mPhysics, error) ||
+            !mRunner.initialize(storage, mPhysics, mPlayer, *renderer, mRoot, error) ||
+            !mRunner.loadInitial(mPath, error))
         {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Playtest: %s", error.message);
             mFailed = true;
             api.quit();
             return;
         }
-        mModel = renderer->UploadModel(model);
         asset::Primitive box;
         if (!asset::CreateShape(asset::ShapeKind::Box, temporary, box))
         {
@@ -55,33 +56,30 @@ namespace idk::level
         beacon.doubleSided = true;
         beacon.depthWrite = false;
         mExitMaterial = renderer->CreateMaterial(beacon);
-        if (!mModel.isValid() || !mExitMesh.isValid() || !mExitMaterial.isValid())
+        if (!mRunner.model().isValid() || !mExitMesh.isValid() || !mExitMaterial.isValid())
         {
             mFailed = true;
             api.quit();
             return;
         }
-        float minimum = mLevel.entry.position.y;
-        for (const auto& object : mLevel.terrain)
-            for (const auto& v : object.vertices)
-                minimum = std::min(minimum, v.position.y);
-        mFallLimit = minimum - 50;
         renderer->SetClearColor({.075f, .085f, .105f, 1});
         restart();
         auto* window = static_cast<SDL_Window*>(renderer->GetWindowHandle());
         SDL_SetWindowTitle(window,
                            "Playtest - click to look | WASD move | Space jump | R restart | Tab cursor | Esc close");
-        SDL_Log("Playtest loaded %zu terrain objects at entry %.3f %.3f %.3f", mLevel.terrain.size(),
-                mLevel.entry.position.x, mLevel.entry.position.y, mLevel.entry.position.z);
+        SDL_Log("Playtest loaded %zu terrain objects at entry %.3f %.3f %.3f", mRunner.current().terrain.size(),
+                mRunner.current().entry.position.x, mRunner.current().entry.position.y,
+                mRunner.current().entry.position.z);
     }
 
     void Playtest::onShutdown(EngineAPI& api)
     {
         mPlayer.shutdown();
+        mRunner.shutdown();
+        mPhysics.shutdown();
         if (auto* renderer = api.getService<gfx::RenderEngine>())
         {
             SDL_SetWindowRelativeMouseMode(static_cast<SDL_Window*>(renderer->GetWindowHandle()), false);
-            renderer->DestroyModel(mModel);
             renderer->DestroyMesh(mExitMesh);
             renderer->DestroyMaterial(mExitMaterial);
         }
@@ -89,10 +87,16 @@ namespace idk::level
 
     void Playtest::restart()
     {
-        mPlayer.reset(mLevel.entry.position);
-        mYaw = mLevel.entry.rotation.y;
-        mPitch = std::clamp(mLevel.entry.rotation.x, -85.0f, 85.0f);
-        mReached = false;
+        mPlayer.reset(mRunner.current().entry.position);
+        mYaw = mRunner.current().entry.rotation.y;
+        mPitch = std::clamp(mRunner.current().entry.rotation.x, -85.0f, 85.0f);
+        float minimum = mRunner.current().entry.position.y;
+        for (const auto& object : mRunner.current().terrain)
+            for (const auto& vertex : object.vertices)
+                minimum = std::min(minimum, vertex.position.y);
+        mFallLimit = minimum - 50;
+        mReached = mRunner.current().atExit(mPlayer.position());
+        mMovement = {0, 0, 0};
         mJump = false;
     }
 
@@ -153,12 +157,25 @@ namespace idk::level
         mJump = false;
         if (mPlayer.position().y < mFallLimit)
             restart();
-        if (!mReached && mLevel.atExit(mPlayer.position()))
+        bool inside = mRunner.current().atExit(mPlayer.position());
+        if (!inside)
+            mReached = false;
+        if (!mReached && inside)
         {
             mReached = true;
             auto* window = static_cast<SDL_Window*>(api.getService<gfx::RenderEngine>()->GetWindowHandle());
-            SDL_SetWindowTitle(window, "Exit reached! - R restart | Esc return to editor");
-            SDL_Log("Playtest exit reached");
+            const auto& destination = mRunner.current().destination;
+            if (!destination.path[0])
+            {
+                SDL_SetWindowTitle(window, "Exit reached! - R restart | Esc return to editor");
+                SDL_Log("Playtest exit reached");
+            }
+            else
+            {
+                Error error;
+                if (!mRunner.pending() && mRunner.requestTransition(destination, error))
+                    SDL_Log("Level transition queued: %s", destination.path);
+            }
         }
     }
 
@@ -167,6 +184,21 @@ namespace idk::level
         if (mFailed)
             return;
         auto& renderer = *api.getService<gfx::RenderEngine>();
+        Error error;
+        auto transition = mRunner.processPending(error);
+        if (transition == LevelRunner::Transition::Changed)
+        {
+            restart();
+            SDL_SetWindowTitle(static_cast<SDL_Window*>(renderer.GetWindowHandle()),
+                               "Playtest - new level | WASD move | R restart | Esc close");
+            SDL_Log("Level transition committed: %s", mRunner.currentPath());
+        }
+        else if (transition == LevelRunner::Transition::Failed)
+        {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Level transition failed: %s", error.message);
+            SDL_SetWindowTitle(static_cast<SDL_Window*>(renderer.GetWindowHandle()),
+                               "Transition failed - current level retained | Leave and re-enter exit to retry");
+        }
         int width = 0, height = 0;
         SDL_GetWindowSizeInPixels(static_cast<SDL_Window*>(renderer.GetWindowHandle()), &width, &height);
         if (width > 0 && height > 0)
@@ -178,7 +210,8 @@ namespace idk::level
             camera.view = glm::lookAt(eye, eye + forward, glm::vec3(0, 1, 0));
             camera.proj = glm::perspectiveRH_NO(glm::radians(70.0f), float(width) / height, .05f, 20000.0f);
             renderer.SetCamera(camera);
-            if (!renderer.SubmitModel(mModel) || !renderer.Submit({mExitMesh, mExitMaterial, mLevel.exit.transform()}))
+            if (!renderer.SubmitModel(mRunner.model()) ||
+                !renderer.Submit({mExitMesh, mExitMaterial, mRunner.current().exit.transform()}))
             {
                 mFailed = true;
                 api.quit();

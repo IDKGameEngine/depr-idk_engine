@@ -1,9 +1,10 @@
 # Level build and playtest pipeline
 
 Build and install inside `steamrt4` with the usual workspace `./build.sh`.
-The build produces `mapc`, `mapedit`, and the game executable, and compiles an
-example into `content/level/playground.idklvl`. No additional dependencies are
-needed; the playtest controller uses the project's existing Jolt dependency.
+The build produces `mapc`, `mapedit`, and the game executable, and compiles
+examples into `content/level/playground.idklvl` and `content/level/finish.idklvl`.
+No additional dependencies are needed; the playtest controller uses the project's
+existing Jolt dependency.
 
 ## In the editor
 
@@ -13,6 +14,15 @@ It builds the current document, including unsaved edits, and launches the game
 installed beside `mapedit`. The source map is unchanged. Only one playtest runs
 at a time. **Stop playtest**, game exit, and editor shutdown release the child
 process and remove its temporary level snapshot.
+
+Select the exit marker and set **Next level** to a compiled path such as
+`level/finish.idklvl`. Leaving it empty marks the end of the run. Destinations
+are relative to the game's level root (the installed `content` directory by
+default), regardless of the source map or temporary playtest snapshot's location.
+Build each destination map to its runtime path before playing. The compiler
+validates path syntax, while the game checks existence and contents when the
+transition is requested; levels can therefore reference one another in any build
+order. The installed playground leads to the finish example's elevated floor.
 
 **Build level** writes the runtime output path shown above the button. Relative
 paths use the editor's content directory. This action replaces the `.idklvl`
@@ -34,6 +44,18 @@ build/I/O error, and 2 for invalid arguments. Use `--force` to replace an
 existing output. The compiler refuses to overwrite the source, including through
 a hard link or symlink. Paths are relative to the calling directory; the game
 resolves its level argument before the engine switches to the content directory.
+
+For levels outside installed content, set a common destination root explicitly:
+
+```bash
+./build-debug/game --level /tmp/my-levels/start.idklvl --level-root /tmp/my-levels
+```
+
+`--level-root` requires `--level`. Destinations must fit in 255 bytes, use `/`
+separators, and end in `.idklvl`. Absolute paths, empty path components, `.`/`..`
+components, control characters, backslashes, and colons are rejected. The runtime
+also rejects symlinks resolving outside the root. The initial `--level` may live
+outside this root, allowing editor snapshots to reference installed levels.
 
 Running the game without `--level` retains the model demo. With a custom
 `IDK_APP_NAME`, use that executable's name; `mapedit` picks it up automatically
@@ -65,9 +87,33 @@ controller supports gravity, ground contact, slopes, stepping, and jumping.
 Falling 50 metres below the lowest terrain vertex restarts the player.
 
 An orange translucent box shows the exit volume, using the exit marker's
-position, rotation, and scale. Overlapping it with the player's capsule reports
-**Exit reached** in the game title and console. R restarts the run. Entry and
-exit marker geometry is excluded from terrain and collision.
+position, rotation, and scale. Entering it with the player's capsule queues the
+destination, or reports **Exit reached** if no destination is set. R restarts
+the current level. Entry and exit marker geometry is excluded from terrain and
+collision. Spawning inside an exit requires leaving and entering it before it
+activates, preventing immediate transition loops.
+
+## Transition lifetime
+
+`Playtest` keeps the engine services, `PhysicsWorld`, `Player`, and `LevelRunner`
+alive across transitions. Exit detection calls `requestTransition()` during a
+fixed update. At the start of application `onPreRender()`, after the renderer has
+cleared its previous draw queue, `processPending()` loads the next level into the
+inactive CPU arena and prepares its GPU model and collision mesh. Loading is
+synchronous and may pause a frame; background streaming is not implemented.
+
+Only after preparation succeeds does the runner replace active terrain, reset
+the existing player's pose, velocity and contacts, and release the previous GPU
+model. The playtest resets camera orientation and movement at the new entry.
+The engine and game process continue running. Level-owned geometry and collision
+are replaced; there is no inventory or campaign state yet.
+
+Missing or corrupt files and resource failures retain the active level and player
+state. The console and window title report failure. Leave and re-enter the exit
+to retry, for example after rebuilding a missing destination. `generation()`
+changes only on successful commits; references into `current()` are valid only
+until the next successful commit or shutdown. Shut the player down before its
+physics world, and shut the runner down while its renderer and world still exist.
 
 ## Data and validation
 
@@ -83,30 +129,36 @@ tested by playtesting rather than inferred by the compiler.
 
 `.idklvl` is versioned, little-endian data with explicit IEEE float32 fields:
 
-- Eight-byte `IDKLVL\r\n` signature, uint32 version (1), uint32 terrain count.
+- Eight-byte `IDKLVL\r\n` signature, uint32 version (2), uint32 terrain count.
 - Entry and exit: position XYZ, rotation XYZ in degrees, signed scale XYZ.
+- A 256-byte zero-terminated destination path; empty means completion.
 - Per terrain: 48-byte zero-terminated name, RGBA floats, uint32 double-sided
   flag, uint32 vertex count, uint32 index count.
 - Per vertex: position XYZ, normal XYZ, UV, tangent XYZW, colour RGBA floats.
 - Per triangle: three uint32 indices local to that terrain's vertices.
 
 There are at most 62 terrain objects, 32,768 vertices, and 196,608 indices.
-Both build and load use caller-owned arenas; the applications supply 4 MiB.
+Both build and load use caller-owned arenas. The runner supplies two 4 MiB
+banks so preparation cannot overwrite the active level, plus 64 KiB of model
+descriptor scratch. Version 1 artifacts remain readable with no destination.
 Failed loads rewind the arena and retain the caller's previous level. File
 writes use a temporary file in the output directory and publish atomically.
 Jolt owns its collision allocations and uses an 8 MiB update scratch allocator.
-The current player implementation owns one Jolt world per process.
+The persistent physics world owns active and, during preparation, staged terrain;
+the player owns its character controller independently of level data.
 
 This initial pipeline supports primitive terrain and a first-person playtest.
 Dynamic props, game scripting, imported asset placement, navigation baking,
-and level-to-level transitions are not included.
+and background level streaming are not included.
 
 ## Verification
 
-Enable `IDK_BUILD_EDITOR_TESTS=ON`, build `idk_level_tests`, and run:
+Enable `IDK_BUILD_EDITOR_TESTS=ON`, build `idk_level_tests` and
+`idk_level_runner_tests`, and run (the runner test needs OpenGL 4.6):
 
 ```bash
-ctest --test-dir build-debug/cmake/idk_engine/level --output-on-failure
+SDL_VIDEODRIVER=offscreen SDL_AUDIODRIVER=dummy \
+    ctest --test-dir build-debug/cmake/idk_engine/level --output-on-failure
 SDL_VIDEODRIVER=offscreen SDL_AUDIODRIVER=dummy \
     ./build-debug/game --level build-debug/content/level/playground.idklvl --frames 10
 ```
@@ -115,3 +167,6 @@ The CPU tests cover compilation, mirrored geometry, artifact roundtrips,
 corrupt/truncated files, arena rollback, source/output preservation, capsule
 grounding, wall collision, jumping, restart, plane collision, and exit detection.
 The offscreen command also checks real graphics initialization and level upload.
+The runner test repeatedly swaps rendered and collidable levels, checks queued
+commit timing, staged collision isolation, missing/corrupt destinations, root
+containment, resource exhaustion rollback, resource reuse, and shutdown.
