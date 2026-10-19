@@ -46,7 +46,7 @@ namespace idk::asset::detail
             std::snprintf(error.message, sizeof(error.message), "Encoded image exceeds decoder limit");
             return false;
         }
-        size_t mark = scratch.mark();
+        idk::ArenaScope temporary(scratch);
         decoderArena = &scratch;
         int width = 0, height = 0, channels = 0;
         auto *pixels = stbi_load_from_memory(bytes.data(), int(bytes.size()), &width, &height, &channels, 4);
@@ -71,7 +71,6 @@ namespace idk::asset::detail
                                    : "Image decoding failed");
         }
         decoderArena = nullptr;
-        scratch.rewind(mark);
         return ok;
     }
 }

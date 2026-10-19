@@ -1,48 +1,16 @@
 #include "idk/editor/Editor.hpp"
 #include "idk/gfx/RenderEngine.hpp"
+#include "idk/editor/EditorGui.hpp"
 #include "idk/EngineAPI.hpp"
 #include <imgui.h>
-#include <ImGuizmo.h>
-#include <imgui_impl_sdl3.h>
-#include <imgui_impl_opengl3.h>
 #include <SDL3/SDL.h>
 
 namespace idk::editor
 {
-    namespace
-    {
-        bool initializeGui(gfx::RenderEngine &renderer)
-        {
-            IMGUI_CHECKVERSION();
-            ImGui::CreateContext();
-            ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-            ImGui::StyleColorsDark();
-            float scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
-            if (scale <= 0)
-                scale = 1;
-            ImGui::GetStyle().ScaleAllSizes(scale);
-            ImGui::GetStyle().FontScaleDpi = scale;
-            ImGui::GetIO().ConfigDpiScaleFonts = true;
-            if (!ImGui_ImplSDL3_InitForOpenGL(static_cast<SDL_Window *>(renderer.GetWindowHandle()),
-                                              renderer.GetContextHandle()))
-            {
-                ImGui::DestroyContext();
-                return false;
-            }
-            if (!ImGui_ImplOpenGL3_Init("#version 460 core"))
-            {
-                ImGui_ImplSDL3_Shutdown();
-                ImGui::DestroyContext();
-                return false;
-            }
-            return true;
-        }
-    } // namespace
-
     void EditorApplication::onInit(EngineAPI &api)
     {
         auto *renderer = api.getService<gfx::RenderEngine>();
-        if (!renderer || !renderer->IsInitialized() || !initializeGui(*renderer))
+        if (!renderer || !renderer->IsInitialized() || !InitializeGui(*renderer))
         {
             api.quit();
             return;
@@ -76,9 +44,7 @@ namespace idk::editor
             return;
         if (auto *renderer = api.getService<gfx::RenderEngine>())
             mPreview.shutdown(*renderer);
-        ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplSDL3_Shutdown();
-        ImGui::DestroyContext();
+        ShutdownGui();
         mInitialized = false;
     }
 
@@ -129,10 +95,7 @@ namespace idk::editor
         if (!mInitialized)
             return;
         auto &renderer = *api.getService<gfx::RenderEngine>();
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL3_NewFrame();
-        ImGui::NewFrame();
-        ImGuizmo::BeginFrame();
+        BeginGuiFrame();
         auto action = mUI.draw(mSession, mViewport, renderer);
         execute(action, renderer);
         const char *error = nullptr;
@@ -144,13 +107,11 @@ namespace idk::editor
     {
         if (!mInitialized)
             return;
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        RenderGui();
     }
 
     void EditorApplication::onGenericEventCallback(EngineAPI &, const void *event)
     {
-        if (ImGui::GetCurrentContext())
-            ImGui_ImplSDL3_ProcessEvent(static_cast<const SDL_Event *>(event));
+        ProcessGuiEvent(event);
     }
 } // namespace idk::editor

@@ -1,6 +1,6 @@
 project(idklevel)
 
-add_library(idklevel STATIC src/Level.cpp src/Player.cpp)
+add_library(idklevel STATIC src/Level.cpp src/PhysicsWorld.cpp src/Player.cpp)
 target_compile_features(idklevel PUBLIC cxx_std_23)
 target_include_directories(idklevel PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(idklevel PUBLIC idkengine_assets PRIVATE Jolt::Jolt)

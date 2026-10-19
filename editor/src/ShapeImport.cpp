@@ -188,17 +188,14 @@ namespace idk::editor
         ShapeDocument next = *this;
         if (replace)
             next.clear();
-        size_t mark = destination.mark();
+        idk::ArenaScope allocations(destination);
         GeometryCopier copier{destination, error};
         for (auto &object : next.mObjects)
             if (object.active && object.isImported())
             {
                 asset::Primitive copy;
                 if (!copier.copy(object.mesh, copy))
-                {
-                    destination.rewind(mark);
                     return false;
-                }
                 object.mesh = copy;
             }
         std::array<glm::mat4, MaxImportNodes> world;
@@ -217,16 +214,12 @@ namespace idk::editor
                 object.shape = asset::ShapeKind::Count;
                 if (!object.setTransform(world[i]))
                 {
-                    destination.rewind(mark);
                     return fail(error, ImportErrorCode::Unsupported,
                                 "Imported world transforms must be finite TRS without shear or zero scale");
                 }
                 const auto &primitive = model.primitives[reference];
                 if (!copier.copy(primitive, object.mesh))
-                {
-                    destination.rewind(mark);
                     return false;
-                }
                 if (primitive.material != asset::NoIndex)
                     object.material = model.materials[primitive.material];
                 object.material.name = {}; // Names belong to object slots, never the parser arena.
@@ -240,6 +233,7 @@ namespace idk::editor
             }
         }
         *this = next;
+        allocations.commit();
         return true;
     }
 } // namespace idk::editor

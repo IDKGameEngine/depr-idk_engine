@@ -264,51 +264,60 @@ namespace idk::asset
                     {
                         if (refs.size() != groups[found].primitives.size())
                             continue;
-                        bool same = true;
-                        for (size_t j = 0; j < refs.size(); ++j)
-                            same &= refs[j] == groups[found].primitives[j];
-                        if (same)
+                        if (std::equal(refs.begin(), refs.end(), groups[found].primitives.begin()))
                             break;
                     }
                     nodeGroup[i] = found;
                     if (found == groupCount)
                         groups[groupCount++].primitives = refs;
                 }
-                return groupCount ? true : fail(ExportErrorCode::InvalidInput, "Scene contains no mesh instances");
+                if (!groupCount)
+                    return fail(ExportErrorCode::InvalidInput, "Scene contains no mesh instances");
+                return true;
             }
 
-            void json(Json &j)
+            void writeScene(Json &writer)
             {
-                j.text("{\"asset\":{\"version\":\"2.0\",\"generator\":\"idk shape "
-                       "editor\"},\"scene\":0,\"scenes\":[{\"nodes\":[");
+                writer.text("{\"asset\":{\"version\":\"2.0\",\"generator\":\"idk shape "
+                            "editor\"},\"scene\":0,\"scenes\":[{\"nodes\":[");
                 bool comma = false;
                 for (uint32_t i = 0; i < model.nodes.size(); ++i)
                     if (model.nodes[i].parent == NoIndex)
                     {
                         if (comma)
-                            j.text(",");
-                        j.number(i);
+                            writer.text(",");
+                        writer.number(i);
                         comma = true;
                     }
-                j.text("]}],\"buffers\":[{\"byteLength\":");
-                j.number(binarySize);
-                j.text("}],\"bufferViews\":[");
+                writer.text("]}]");
+            }
+
+            void writeBuffers(Json &writer)
+            {
+                writer.text(",\"buffers\":[{\"byteLength\":");
+                writer.number(binarySize);
+                writer.text("}],\"bufferViews\":[");
                 for (uint32_t i = 0; i < geometryCount; ++i)
                 {
                     if (i)
-                        j.text(",");
+                        writer.text(",");
                     const auto &g = geometry[i];
-                    j.text("{\"buffer\":0,\"byteOffset\":");
-                    j.number(g.vertexOffset);
-                    j.text(",\"byteLength\":");
-                    j.number(g.indexOffset - g.vertexOffset);
-                    j.text(",\"byteStride\":64,\"target\":34962},{\"buffer\":0,\"byteOffset\":");
-                    j.number(g.indexOffset);
-                    j.text(",\"byteLength\":");
-                    j.number(g.indexCount * 4);
-                    j.text(",\"target\":34963}");
+                    writer.text("{\"buffer\":0,\"byteOffset\":");
+                    writer.number(g.vertexOffset);
+                    writer.text(",\"byteLength\":");
+                    writer.number(g.indexOffset - g.vertexOffset);
+                    writer.text(",\"byteStride\":64,\"target\":34962},{\"buffer\":0,\"byteOffset\":");
+                    writer.number(g.indexOffset);
+                    writer.text(",\"byteLength\":");
+                    writer.number(g.indexCount * 4);
+                    writer.text(",\"target\":34963}");
                 }
-                j.text("],\"accessors\":[");
+                writer.text("]");
+            }
+
+            void writeAccessors(Json &writer)
+            {
+                writer.text(",\"accessors\":[");
                 constexpr unsigned components[] = {3, 3, 2, 4, 4};
                 constexpr uint32_t offsets[] = {0, 12, 24, 32, 48};
                 constexpr const char *types[] = {"VEC3", "VEC3", "VEC2", "VEC4", "VEC4"};
@@ -318,124 +327,148 @@ namespace idk::asset
                     for (unsigned stream = 0; stream < 6; ++stream)
                     {
                         if (i || stream)
-                            j.text(",");
-                        j.text("{\"bufferView\":");
-                        j.number(i * 2 + uint32_t(stream == 5));
-                        j.text(",\"componentType\":");
-                        j.number(stream == 5 ? 5125u : 5126u);
-                        j.text(",\"count\":");
-                        j.number(stream == 5 ? g.indexCount : uint32_t(g.primitive->vertices.size()));
-                        j.text(",\"type\":");
-                        j.quote(stream == 5 ? "SCALAR" : types[stream]);
+                            writer.text(",");
+                        writer.text("{\"bufferView\":");
+                        writer.number(i * 2 + uint32_t(stream == 5));
+                        writer.text(",\"componentType\":");
+                        writer.number(stream == 5 ? 5125u : 5126u);
+                        writer.text(",\"count\":");
+                        writer.number(stream == 5 ? g.indexCount : uint32_t(g.primitive->vertices.size()));
+                        writer.text(",\"type\":");
+                        writer.quote(stream == 5 ? "SCALAR" : types[stream]);
                         if (stream != 5)
                         {
-                            j.text(",\"byteOffset\":");
-                            j.number(offsets[stream]);
+                            writer.text(",\"byteOffset\":");
+                            writer.number(offsets[stream]);
                         }
                         if (stream == 0)
                         {
-                            j.text(",\"min\":");
-                            j.vector(&g.minimum.x, components[stream]);
-                            j.text(",\"max\":");
-                            j.vector(&g.maximum.x, 3);
+                            writer.text(",\"min\":");
+                            writer.vector(&g.minimum.x, components[stream]);
+                            writer.text(",\"max\":");
+                            writer.vector(&g.maximum.x, 3);
                         }
-                        j.text("}");
+                        writer.text("}");
                     }
                 }
-                j.text("],\"meshes\":[");
+                writer.text("]");
+            }
+
+            void writeMeshes(Json &writer)
+            {
+                writer.text(",\"meshes\":[");
                 for (uint32_t i = 0; i < groupCount; ++i)
                 {
                     if (i)
-                        j.text(",");
-                    j.text("{\"primitives\":[");
+                        writer.text(",");
+                    writer.text("{\"primitives\":[");
                     for (size_t k = 0; k < groups[i].primitives.size(); ++k)
                     {
                         if (k)
-                            j.text(",");
+                            writer.text(",");
                         uint32_t p = groups[i].primitives[k], base = primitiveGeometry[p] * 6;
-                        j.text("{\"attributes\":{\"POSITION\":");
-                        j.number(base);
-                        j.text(",\"NORMAL\":");
-                        j.number(base + 1);
-                        j.text(",\"TEXCOORD_0\":");
-                        j.number(base + 2);
-                        j.text(",\"COLOR_0\":");
-                        j.number(base + 4);
+                        writer.text("{\"attributes\":{\"POSITION\":");
+                        writer.number(base);
+                        writer.text(",\"NORMAL\":");
+                        writer.number(base + 1);
+                        writer.text(",\"TEXCOORD_0\":");
+                        writer.number(base + 2);
+                        writer.text(",\"COLOR_0\":");
+                        writer.number(base + 4);
                         if (model.primitives[p].hasTangents)
                         {
-                            j.text(",\"TANGENT\":");
-                            j.number(base + 3);
+                            writer.text(",\"TANGENT\":");
+                            writer.number(base + 3);
                         }
-                        j.text("},\"indices\":");
-                        j.number(base + 5);
-                        j.text(",\"mode\":4");
+                        writer.text("},\"indices\":");
+                        writer.number(base + 5);
+                        writer.text(",\"mode\":4");
                         if (model.primitives[p].material != NoIndex)
                         {
-                            j.text(",\"material\":");
-                            j.number(model.primitives[p].material);
+                            writer.text(",\"material\":");
+                            writer.number(model.primitives[p].material);
                         }
-                        j.text("}");
+                        writer.text("}");
                     }
-                    j.text("]}");
+                    writer.text("]}");
                 }
-                j.text("],\"nodes\":[");
+                writer.text("]");
+            }
+
+            void writeNodes(Json &writer)
+            {
+                writer.text(",\"nodes\":[");
                 for (uint32_t i = 0; i < model.nodes.size(); ++i)
                 {
                     if (i)
-                        j.text(",");
+                        writer.text(",");
                     const auto &n = model.nodes[i];
-                    j.text("{\"name\":");
-                    j.quote(n.name);
-                    j.text(",\"matrix\":");
-                    j.vector(&n.localTransform[0][0], 16);
+                    writer.text("{\"name\":");
+                    writer.quote(n.name);
+                    writer.text(",\"matrix\":");
+                    writer.vector(&n.localTransform[0][0], 16);
                     if (nodeGroup[i] != NoIndex)
                     {
-                        j.text(",\"mesh\":");
-                        j.number(nodeGroup[i]);
+                        writer.text(",\"mesh\":");
+                        writer.number(nodeGroup[i]);
                     }
                     bool first = true;
                     for (uint32_t child = i + 1; child < model.nodes.size(); ++child)
                         if (model.nodes[child].parent == i)
                         {
-                            j.text(first ? ",\"children\":[" : ",");
-                            j.number(child);
+                            writer.text(first ? ",\"children\":[" : ",");
+                            writer.number(child);
                             first = false;
                         }
                     if (!first)
-                        j.text("]");
-                    j.text("}");
+                        writer.text("]");
+                    writer.text("}");
                 }
-                j.text("]");
+                writer.text("]");
+            }
+
+            void writeMaterials(Json &writer)
+            {
                 if (!model.materials.empty())
-                    j.text(",\"materials\":[");
+                    writer.text(",\"materials\":[");
                 for (size_t i = 0; i < model.materials.size(); ++i)
                 {
                     if (i)
-                        j.text(",");
+                        writer.text(",");
                     const auto &m = model.materials[i];
-                    j.text("{\"name\":");
-                    j.quote(m.name);
-                    j.text(",\"pbrMetallicRoughness\":{\"baseColorFactor\":");
-                    j.vector(&m.baseColor.x, 4);
-                    j.text(",\"metallicFactor\":");
-                    j.number(m.metallic);
-                    j.text(",\"roughnessFactor\":");
-                    j.number(m.roughness);
-                    j.text("},\"emissiveFactor\":");
-                    j.vector(&m.emissive.x, 3);
-                    j.text(",\"alphaMode\":");
-                    j.quote(m.alphaMode == AlphaMode::Blend  ? "BLEND"
-                            : m.alphaMode == AlphaMode::Mask ? "MASK"
-                                                             : "OPAQUE");
-                    j.text(",\"alphaCutoff\":");
-                    j.number(m.alphaCutoff);
-                    j.text(",\"doubleSided\":");
-                    j.text(m.doubleSided ? "true" : "false");
-                    j.text("}");
+                    writer.text("{\"name\":");
+                    writer.quote(m.name);
+                    writer.text(",\"pbrMetallicRoughness\":{\"baseColorFactor\":");
+                    writer.vector(&m.baseColor.x, 4);
+                    writer.text(",\"metallicFactor\":");
+                    writer.number(m.metallic);
+                    writer.text(",\"roughnessFactor\":");
+                    writer.number(m.roughness);
+                    writer.text("},\"emissiveFactor\":");
+                    writer.vector(&m.emissive.x, 3);
+                    writer.text(",\"alphaMode\":");
+                    writer.quote(m.alphaMode == AlphaMode::Blend  ? "BLEND"
+                                 : m.alphaMode == AlphaMode::Mask ? "MASK"
+                                                                  : "OPAQUE");
+                    writer.text(",\"alphaCutoff\":");
+                    writer.number(m.alphaCutoff);
+                    writer.text(",\"doubleSided\":");
+                    writer.text(m.doubleSided ? "true" : "false");
+                    writer.text("}");
                 }
                 if (!model.materials.empty())
-                    j.text("]");
-                j.text("}");
+                    writer.text("]");
+            }
+
+            void writeJson(Json &writer)
+            {
+                writeScene(writer);
+                writeBuffers(writer);
+                writeAccessors(writer);
+                writeMeshes(writer);
+                writeNodes(writer);
+                writeMaterials(writer);
+                writer.text("}");
             }
 
             static bool u32(FILE *file, uint32_t value)
@@ -446,19 +479,19 @@ namespace idk::asset
 
             static bool scalar(FILE *file, float value) { return u32(file, std::bit_cast<uint32_t>(value)); }
 
-            bool write(FILE *file, const Json &j)
+            bool write(FILE *file, const Json &writer)
             {
                 static_assert(sizeof(float) == 4 && std::numeric_limits<float>::is_iec559);
-                uint32_t jsonSize = uint32_t((j.size + 3) & ~size_t(3));
+                uint32_t jsonSize = uint32_t((writer.size + 3) & ~size_t(3));
                 uint64_t total = 12ull + 8 + jsonSize + 8 + binarySize;
                 if (total > UINT32_MAX)
                     return fail(ExportErrorCode::Unsupported, "GLB exceeds 32-bit size limit");
                 if (!u32(file, 0x46546c67) || !u32(file, 2) || !u32(file, uint32_t(total)) || !u32(file, jsonSize) ||
                     !u32(file, 0x4e4f534a))
                     return false;
-                if (std::fwrite(j.buffer.data(), 1, j.size, file) != j.size)
+                if (std::fwrite(writer.buffer.data(), 1, writer.size, file) != writer.size)
                     return false;
-                for (size_t i = j.size; i < jsonSize; ++i)
+                for (size_t i = writer.size; i < jsonSize; ++i)
                     if (std::fputc(' ', file) == EOF)
                         return false;
                 if (!u32(file, binarySize) || !u32(file, 0x004e4942))
@@ -490,9 +523,9 @@ namespace idk::asset
                 auto *bytes = static_cast<char *>(scratch.alloc(available, 1));
                 if (!bytes || !available)
                     return memory();
-                Json j{{bytes, available}};
-                json(j);
-                if (!j.ok || j.size > UINT32_MAX - 3)
+                Json writer{{bytes, available}};
+                writeJson(writer);
+                if (!writer.ok || writer.size > UINT32_MAX - 3)
                     return memory();
                 char temporary[1200];
                 FILE *file = nullptr;
@@ -511,7 +544,7 @@ namespace idk::asset
                     return io("Opening temporary export");
                 char buffer[8192];
                 errno = 0;
-                bool ok = std::setvbuf(file, buffer, _IOFBF, sizeof(buffer)) == 0 && write(file, j);
+                bool ok = std::setvbuf(file, buffer, _IOFBF, sizeof(buffer)) == 0 && write(file, writer);
                 int writeError = ok ? 0 : (errno ? errno : EIO);
                 if (std::fclose(file) != 0)
                 {
@@ -543,10 +576,8 @@ namespace idk::asset
     bool ExportModelGlb(const Model &model, const char *path, idk::Arena &scratch, ExportError &error, bool overwrite)
     {
         error = {};
-        size_t mark = scratch.mark();
+        idk::ArenaScope temporary(scratch);
         Exporter exporter{model, path, scratch, error};
-        bool ok = exporter.run(overwrite);
-        scratch.rewind(mark);
-        return ok;
+        return exporter.run(overwrite);
     }
 }

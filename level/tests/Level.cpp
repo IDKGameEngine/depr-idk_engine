@@ -160,8 +160,12 @@ namespace
         read.reset();
         CHECK(Load(path, read, result, error));
         {
+            alignas(16) static std::byte physicsStorage[64 * 1024];
+            Arena physics(physicsStorage);
             PhysicsWorld world;
-            CHECK(world.initialize(error));
+            CHECK(!world.initialize(tiny, error));
+            CHECK(tiny.mark() == 0 && !tiny.failed());
+            CHECK(world.initialize(physics, error));
             CHECK(world.prepareTerrain(result, error));
             world.commitTerrain();
             Player player;
@@ -202,8 +206,10 @@ namespace
         arena.reset();
         CHECK(Build(session, arena, level, error));
         {
+            alignas(16) static std::byte physicsStorage[64 * 1024];
+            Arena physics(physicsStorage);
             PhysicsWorld world;
-            CHECK(world.initialize(error));
+            CHECK(world.initialize(physics, error));
             CHECK(world.prepareTerrain(level, error));
             world.commitTerrain();
             Player player;

@@ -15,6 +15,8 @@ namespace idk::level
     class LevelRunner final: public idk::Immobile
     {
     public:
+        ~LevelRunner();
+
         struct Storage
         {
             alignas(16) std::byte banks[2][4 * 1024 * 1024];

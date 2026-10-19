@@ -89,6 +89,8 @@ selection, camera controls, and gizmos are shared with the model editor through
 `ShapeDocument`, `ShapeSession`, `ScenePreview`, and `EditorViewport`. The map
 uses a fixed 64 KiB arena for primitive geometry. CPU commands and file parsing
 use bounded storage and no exceptions.
+`PlaytestProcess` owns the child game and temporary snapshot independently of
+the UI. Both editors share GUI backend setup and frame handling in `EditorGui`.
 
 Enable `IDK_BUILD_EDITOR_TESTS=ON` to build `idk_mapedit_tests`. Run it directly
 or with `ctest --test-dir build-debug/cmake/idk_engine/mapedit --output-on-failure`.

@@ -749,7 +749,7 @@ namespace idk::gfx
                                                           : TextureWrap::ClampToEdge;
         }
 
-        bool uploadModelResources(RenderEngine &renderer, const asset::Model &source, ModelResource &model)
+        bool validateModel(const asset::Model &source)
         {
             using asset::NoIndex;
             if (source.primitives.empty() || source.nodes.empty() ||
@@ -770,6 +770,11 @@ namespace idk::gfx
                                    m.emissiveTexture})
                     if (index != NoIndex && index >= source.textures.size())
                         return false;
+            return true;
+        }
+
+        bool uploadSamplers(RenderEngine &renderer, const asset::Model &source, ModelResource &model)
+        {
             for (const auto &s : source.samplers)
             {
                 SamplerDesc desc;
@@ -802,6 +807,12 @@ namespace idk::gfx
                     return false;
                 model.samplers.push(h);
             }
+            return true;
+        }
+
+        bool uploadMaterials(RenderEngine &renderer, const asset::Model &source, ModelResource &model)
+        {
+            using asset::NoIndex;
             TextureHandle images[RenderLimits::MaxModelImages]{};
             for (const auto &m : source.materials)
             {
@@ -838,6 +849,12 @@ namespace idk::gfx
                     return false;
                 model.materials.push(h);
             }
+            return true;
+        }
+
+        bool uploadMeshes(RenderEngine &renderer, const asset::Model &source, ModelResource &model)
+        {
+            using asset::NoIndex;
             uint32_t fallback = NoIndex;
             constexpr VertexAttribute attributes[] = {
                 {0, VertexAttribType::Float3, offsetof(asset::Vertex, position)},
@@ -874,6 +891,12 @@ namespace idk::gfx
                 model.meshes.push(h);
                 model.meshMaterials.push(material);
             }
+            return true;
+        }
+
+        bool buildInstances(const asset::Model &source, ModelResource &model)
+        {
+            using asset::NoIndex;
             glm::mat4 world[RenderLimits::MaxModelNodes];
             for (size_t i = 0; i < source.nodes.size(); ++i)
             {
@@ -891,6 +914,14 @@ namespace idk::gfx
             }
             return !model.instances.empty();
         }
+
+        bool uploadModelResources(RenderEngine &renderer, const asset::Model &source, ModelResource &model)
+        {
+            return validateModel(source) && uploadSamplers(renderer, source, model) &&
+                   uploadMaterials(renderer, source, model) && uploadMeshes(renderer, source, model) &&
+                   buildInstances(source, model);
+        }
+
     }
 
     ModelHandle RenderEngine::UploadModel(const idk::asset::Model &source)

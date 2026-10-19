@@ -1,57 +1,23 @@
 #include "idk/mapedit/MapEditor.hpp"
 #include "idk/gfx/RenderEngine.hpp"
+#include "idk/editor/EditorGui.hpp"
 #include "idk/EngineAPI.hpp"
 #include "idk/level/Build.hpp"
 #include <imgui.h>
-#include <ImGuizmo.h>
-#include <imgui_impl_sdl3.h>
-#include <imgui_impl_opengl3.h>
 #include <SDL3/SDL.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
-#include <cstdlib>
 #include <sys/stat.h>
-#include <unistd.h>
 
 namespace idk::mapedit
 {
-    namespace
-    {
-        bool initializeGui(gfx::RenderEngine &renderer)
-        {
-            IMGUI_CHECKVERSION();
-            ImGui::CreateContext();
-            ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-            ImGui::StyleColorsDark();
-            float scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
-            if (scale <= 0)
-                scale = 1;
-            ImGui::GetStyle().ScaleAllSizes(scale);
-            ImGui::GetStyle().FontScaleDpi = scale;
-            ImGui::GetIO().ConfigDpiScaleFonts = true;
-            if (!ImGui_ImplSDL3_InitForOpenGL(static_cast<SDL_Window *>(renderer.GetWindowHandle()),
-                                              renderer.GetContextHandle()))
-            {
-                ImGui::DestroyContext();
-                return false;
-            }
-            if (!ImGui_ImplOpenGL3_Init("#version 460 core"))
-            {
-                ImGui_ImplSDL3_Shutdown();
-                ImGui::DestroyContext();
-                return false;
-            }
-            return true;
-        }
-    } // namespace
-
     void MapEditorApplication::onInit(EngineAPI &api)
     {
         auto *renderer = api.getService<gfx::RenderEngine>();
-        if (!renderer || !renderer->IsInitialized() || !initializeGui(*renderer))
+        if (!renderer || !renderer->IsInitialized() || !editor::InitializeGui(*renderer))
         {
             api.quit();
             return;
@@ -73,14 +39,12 @@ namespace idk::mapedit
 
     void MapEditorApplication::onShutdown(EngineAPI &api)
     {
-        stopPlaytest();
+        mPlaytest.stop();
         if (!mInitialized)
             return;
         if (auto *renderer = api.getService<gfx::RenderEngine>())
             mPreview.shutdown(*renderer);
-        ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplSDL3_Shutdown();
-        ImGui::DestroyContext();
+        editor::ShutdownGui();
         mInitialized = false;
     }
 
@@ -228,7 +192,7 @@ namespace idk::mapedit
             action = Action::Build;
         ImGui::EndDisabled();
         ImGui::SameLine();
-        if (mPlaytest)
+        if (mPlaytest.running())
         {
             if (ImGui::Button("Stop playtest"))
                 action = Action::Stop;
@@ -369,41 +333,17 @@ namespace idk::mapedit
                 buildLevel(true);
                 break;
             case Action::Stop:
-                stopPlaytest();
+                mPlaytest.stop();
                 mSession.setStatus("Playtest stopped.");
                 break;
         }
     }
 
-    void MapEditorApplication::cleanPlaytest()
-    {
-        if (mPlayPath[0])
-            unlink(mPlayPath);
-        if (mPlayDirectory[0])
-            rmdir(mPlayDirectory);
-        mPlayPath[0] = mPlayDirectory[0] = 0;
-    }
-
-    void MapEditorApplication::stopPlaytest()
-    {
-        if (mPlaytest)
-        {
-            SDL_KillProcess(mPlaytest, true);
-            SDL_WaitProcess(mPlaytest, true, nullptr);
-            SDL_DestroyProcess(mPlaytest);
-            mPlaytest = nullptr;
-        }
-        cleanPlaytest();
-    }
-
     void MapEditorApplication::pollPlaytest()
     {
         int code = 0;
-        if (!mPlaytest || !SDL_WaitProcess(mPlaytest, false, &code))
+        if (!mPlaytest.poll(code))
             return;
-        SDL_DestroyProcess(mPlaytest);
-        mPlaytest = nullptr;
-        cleanPlaytest();
         char message[128];
         std::snprintf(message, sizeof(message), "Playtest finished (exit code %d).", code);
         mSession.setStatus(message);
@@ -438,46 +378,9 @@ namespace idk::mapedit
                 mSession.setStatus("Runtime level built successfully.");
             return;
         }
-        if (mPlaytest)
-            return;
-        std::snprintf(mPlayDirectory, sizeof(mPlayDirectory), "/tmp/idk-playtest-XXXXXX");
-        if (!mkdtemp(mPlayDirectory))
-        {
-            mPlayDirectory[0] = 0;
-            mSession.setStatus("Could not create a temporary playtest directory.");
-            return;
-        }
-        std::snprintf(mPlayPath, sizeof(mPlayPath), "%s/level.idklvl", mPlayDirectory);
-        if (!level::Save(result, mPlayPath, error))
+        if (!mPlaytest.start(result, IDK_PLAYTEST_EXECUTABLE, error))
         {
             mSession.setStatus(error.message);
-            cleanPlaytest();
-            return;
-        }
-        char executable[4096];
-        const char *base = SDL_GetBasePath();
-        if (!base)
-        {
-            mSession.setStatus("Could not locate the playtest executable directory.");
-            cleanPlaytest();
-            return;
-        }
-        int length = std::snprintf(executable, sizeof(executable), "%s%s", base, IDK_PLAYTEST_EXECUTABLE);
-        if (length < 0 || size_t(length) >= sizeof(executable))
-        {
-            mSession.setStatus("Playtest executable path is too long.");
-            cleanPlaytest();
-            return;
-        }
-        const char *arguments[] = {executable, "--level", mPlayPath, nullptr};
-        mPlaytest = SDL_CreateProcess(arguments, false);
-        if (!mPlaytest)
-        {
-            char message[640];
-            std::snprintf(message, sizeof(message),
-                          "Playtest launch failed: %s. Build and install the game alongside mapedit.", SDL_GetError());
-            mSession.setStatus(message);
-            cleanPlaytest();
             return;
         }
         mSession.setStatus("Playtest running. Esc in the game returns here; Stop playtest closes it.");
@@ -489,10 +392,7 @@ namespace idk::mapedit
             return;
         auto &renderer = *api.getService<gfx::RenderEngine>();
         pollPlaytest();
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL3_NewFrame();
-        ImGui::NewFrame();
-        ImGuizmo::BeginFrame();
+        editor::BeginGuiFrame();
         execute(draw(renderer), renderer);
         const char *error = nullptr;
         if (!mPreview.submit(renderer, mSession.document(), error))
@@ -503,13 +403,11 @@ namespace idk::mapedit
     {
         if (!mInitialized)
             return;
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        editor::RenderGui();
     }
 
     void MapEditorApplication::onGenericEventCallback(EngineAPI &, const void *event)
     {
-        if (ImGui::GetCurrentContext())
-            ImGui_ImplSDL3_ProcessEvent(static_cast<const SDL_Event *>(event));
+        editor::ProcessGuiEvent(event);
     }
 } // namespace idk::mapedit

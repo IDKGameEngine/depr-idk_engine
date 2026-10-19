@@ -66,7 +66,9 @@ namespace idk::asset
                 if (dependencyCount == model.dependencies.size())
                     return memory();
                 model.dependencies[dependencyCount++] = text(value);
-                return !output.failed() || memory();
+                if (output.failed())
+                    return memory();
+                return true;
             }
 
             static int hex(char c)
@@ -142,6 +144,14 @@ namespace idk::asset
                 return true;
             }
 
+            template <class T>
+            bool coreOnly(const T &object)
+            {
+                if (object.extensions_count)
+                    return fail(ImportErrorCode::Unsupported, "Unsupported extension payload");
+                return true;
+            }
+
             bool profile()
             {
                 if (!data->asset.version || std::strcmp(data->asset.version, "2.0") ||
@@ -152,46 +162,50 @@ namespace idk::asset
                                 "Unsupported required extension: ", data->extensions_required[0]);
                 if (data->animations_count || data->skins_count)
                     return fail(ImportErrorCode::Unsupported, "Animation and skins are outside the static profile");
-#define CHECK_EXTENSION(object)                                                                                        \
-    if ((object).extensions_count)                                                                                     \
-    return fail(ImportErrorCode::Unsupported, "Unsupported extension payload")
                 if (data->lights_count || data->variants_count)
                     return fail(ImportErrorCode::Unsupported, "Light/material-variant extensions are not supported");
                 if (data->data_extensions_count)
                     return fail(ImportErrorCode::Unsupported, "Unsupported root extension payload");
-                CHECK_EXTENSION(data->asset);
+                if (!coreOnly(data->asset))
+                    return false;
                 for (size_t i = 0; i < data->buffer_views_count; ++i)
                 {
-                    CHECK_EXTENSION(data->buffer_views[i]);
+                    if (!coreOnly(data->buffer_views[i]))
+                        return false;
                     if (data->buffer_views[i].has_meshopt_compression)
                         return fail(ImportErrorCode::Unsupported, "Meshopt compression is not supported");
                 }
                 for (size_t i = 0; i < data->accessors_count; ++i)
                 {
-                    CHECK_EXTENSION(data->accessors[i]);
+                    if (!coreOnly(data->accessors[i]))
+                        return false;
                 }
                 for (size_t i = 0; i < data->images_count; ++i)
                 {
-                    CHECK_EXTENSION(data->images[i]);
+                    if (!coreOnly(data->images[i]))
+                        return false;
                 }
                 for (size_t i = 0; i < data->samplers_count; ++i)
                 {
                     const auto &sampler = data->samplers[i];
-                    CHECK_EXTENSION(sampler);
+                    if (!coreOnly(sampler))
+                        return false;
                     if (!validWrap(sampler.wrap_s) || !validWrap(sampler.wrap_t))
                         return fail(ImportErrorCode::InvalidInput, "Invalid sampler wrap mode");
                 }
                 for (size_t i = 0; i < data->textures_count; ++i)
                 {
                     const auto &t = data->textures[i];
-                    CHECK_EXTENSION(t);
+                    if (!coreOnly(t))
+                        return false;
                     if (t.has_basisu || t.has_webp || !t.image)
                         return fail(ImportErrorCode::Unsupported, "Only core PNG/JPEG textures are supported");
                 }
                 for (size_t i = 0; i < data->materials_count; ++i)
                 {
                     const auto &m = data->materials[i];
-                    CHECK_EXTENSION(m);
+                    if (!coreOnly(m))
+                        return false;
                     if (m.has_pbr_specular_glossiness || m.has_clearcoat || m.has_transmission || m.has_volume ||
                         m.has_ior || m.has_specular || m.has_sheen || m.has_emissive_strength || m.has_iridescence ||
                         m.has_diffuse_transmission || m.has_anisotropy || m.has_dispersion || m.unlit)
@@ -203,11 +217,13 @@ namespace idk::asset
                 }
                 for (size_t i = 0; i < data->meshes_count; ++i)
                 {
-                    CHECK_EXTENSION(data->meshes[i]);
+                    if (!coreOnly(data->meshes[i]))
+                        return false;
                     for (size_t j = 0; j < data->meshes[i].primitives_count; ++j)
                     {
                         const auto &p = data->meshes[i].primitives[j];
-                        CHECK_EXTENSION(p);
+                        if (!coreOnly(p))
+                            return false;
                         if (p.type != cgltf_primitive_type_triangles || p.targets_count ||
                             p.has_draco_mesh_compression || p.mappings_count)
                             return fail(ImportErrorCode::Unsupported,
@@ -218,15 +234,16 @@ namespace idk::asset
                 }
                 for (size_t i = 0; i < data->nodes_count; ++i)
                 {
-                    CHECK_EXTENSION(data->nodes[i]);
+                    if (!coreOnly(data->nodes[i]))
+                        return false;
                     if (data->nodes[i].has_mesh_gpu_instancing)
                         return fail(ImportErrorCode::Unsupported, "Instancing extension is not supported");
                 }
                 for (size_t i = 0; i < data->scenes_count; ++i)
                 {
-                    CHECK_EXTENSION(data->scenes[i]);
+                    if (!coreOnly(data->scenes[i]))
+                        return false;
                 }
-#undef CHECK_EXTENSION
                 return true;
             }
 
@@ -239,7 +256,7 @@ namespace idk::asset
                 {
                     const auto &source = data->images[i];
                     auto &image = model.images[i];
-                    size_t mark = scratch.mark();
+                    idk::ArenaScope temporary(scratch);
                     std::span<const uint8_t> bytes;
                     if (source.buffer_view)
                     {
@@ -276,7 +293,6 @@ namespace idk::asset
                         return memory();
                     if (!detail::DecodeImage(bytes, output, scratch, image, error))
                         return false;
-                    scratch.rewind(mark);
                 }
                 return true;
             }
@@ -377,7 +393,9 @@ namespace idk::asset
                     d.alphaCutoff = s.alpha_cutoff;
                     d.doubleSided = s.double_sided;
                 }
-                return !output.failed() || memory();
+                if (output.failed())
+                    return memory();
+                return true;
             }
 
             uint32_t textureIndex(const cgltf_texture_view &value) const
@@ -402,7 +420,7 @@ namespace idk::asset
                     return fail(ImportErrorCode::InvalidInput, "Colour must have three or four components");
                 if (components > 4 || vertices.size() > std::numeric_limits<size_t>::max() / components)
                     return memory();
-                size_t mark = scratch.mark();
+                idk::ArenaScope temporary(scratch);
                 auto floats = scratch.array<float>(vertices.size() * components);
                 if (scratch.failed())
                     return memory();
@@ -436,7 +454,6 @@ namespace idk::asset
                             break;
                     }
                 }
-                scratch.rewind(mark);
                 return true;
             }
 
@@ -445,7 +462,7 @@ namespace idk::asset
                 const cgltf_accessor *positions = cgltf_find_accessor(&source, cgltf_attribute_type_position, 0);
                 if (!positions || !positions->count || positions->count > NoIndex)
                     return fail(ImportErrorCode::InvalidInput, "Missing/oversized vertex positions");
-                size_t mark = scratch.mark();
+                idk::ArenaScope temporary(scratch);
                 auto vertices = scratch.array<Vertex>(positions->count);
                 if (scratch.failed())
                     return memory();
@@ -503,7 +520,6 @@ namespace idk::asset
                 }
                 result.material =
                     source.material ? uint32_t(source.material - data->materials) : uint32_t(data->materials_count);
-                scratch.rewind(mark);
                 return true;
             }
 
@@ -543,7 +559,7 @@ namespace idk::asset
                 return true;
             }
 
-            bool run()
+            bool parse()
             {
                 options.memory.alloc_func = parseAlloc;
                 options.memory.free_func = parseFree;
@@ -560,6 +576,13 @@ namespace idk::asset
                 if (data->nodes_count > NoIndex || data->materials_count >= NoIndex || data->images_count > NoIndex ||
                     data->textures_count > NoIndex || data->samplers_count >= NoIndex)
                     return fail(ImportErrorCode::Unsupported, "Asset exceeds 32-bit index limits");
+                if (output.failed())
+                    return memory();
+                return true;
+            }
+
+            bool metadata()
+            {
                 model.dependencies = output.array<std::string_view>(1 + data->buffers_count + data->images_count);
                 model.warnings = output.array<std::string_view>(data->extensions_used_count);
                 if (output.failed())
@@ -575,8 +598,13 @@ namespace idk::asset
                         if (!filePath(data->buffers[i].uri, file) || !dependency(file))
                             return false;
                     }
-                if (!images() || !materials())
-                    return false;
+                if (output.failed())
+                    return memory();
+                return true;
+            }
+
+            bool meshes()
+            {
                 meshOffsets = scratch.array<uint32_t>(data->meshes_count);
                 if (scratch.failed())
                     return memory();
@@ -596,9 +624,18 @@ namespace idk::asset
                     {
                         auto &p = model.primitives[meshOffsets[i] + j];
                         p.name = text(data->meshes[i].name, true);
-                        if (output.failed() || !primitive(data->meshes[i].primitives[j], p))
-                            return output.failed() ? memory() : false;
+                        if (output.failed())
+                            return memory();
+                        if (!primitive(data->meshes[i].primitives[j], p))
+                            return false;
                     }
+                if (output.failed())
+                    return memory();
+                return true;
+            }
+
+            bool scene()
+            {
                 model.nodes = output.array<Node>(data->nodes_count);
                 visited = scratch.array<uint8_t>(data->nodes_count);
                 if (output.failed() || scratch.failed())
@@ -615,8 +652,17 @@ namespace idk::asset
                         if (!data->nodes[i].parent && !node(data->nodes[i], NoIndex, 0))
                             return false;
                 model.nodes = model.nodes.first(nodeCount);
+                if (output.failed())
+                    return memory();
+                return true;
+            }
+
+            bool run()
+            {
+                if (!parse() || !metadata() || !images() || !materials() || !meshes() || !scene())
+                    return false;
                 model.dependencies = model.dependencies.first(dependencyCount);
-                return !output.failed() || memory();
+                return true;
             }
         };
     }
@@ -631,15 +677,15 @@ namespace idk::asset
             std::snprintf(error.message, sizeof(error.message), "Path must be nonempty and arenas must not overlap");
             return false;
         }
-        size_t outputMark = output.mark(), scratchMark = scratch.mark();
+        idk::ArenaScope allocations(output);
+        idk::ArenaScope temporary(scratch);
         Importer importer{path, output, scratch, model, error};
-        bool ok = importer.run();
-        scratch.rewind(scratchMark);
-        if (!ok)
+        if (!importer.run())
         {
-            output.rewind(outputMark);
             model = {};
+            return false;
         }
-        return ok;
+        allocations.commit();
+        return true;
     }
 }

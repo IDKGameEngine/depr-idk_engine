@@ -25,9 +25,11 @@ namespace idk::level
         }
         static LevelRunner::Storage storage;
         alignas(16) static std::byte scratch[64 * 1024];
+        alignas(16) static std::byte physicsStorage[64 * 1024];
         idk::Arena temporary(scratch);
+        idk::Arena physics(physicsStorage);
         Error error;
-        if (!mPhysics.initialize(error) || !mPlayer.initialize(mPhysics, error) ||
+        if (!mPhysics.initialize(physics, error) || !mPlayer.initialize(mPhysics, error) ||
             !mRunner.initialize(storage, mPhysics, mPlayer, *renderer, mRoot, error) ||
             !mRunner.loadInitial(mPath, error))
         {

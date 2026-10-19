@@ -6,7 +6,7 @@ target_include_directories(idkmapedit_document PUBLIC "${CMAKE_CURRENT_SOURCE_DI
 target_link_libraries(idkmapedit_document PUBLIC idkeditor_shapes)
 target_compile_options(idkmapedit_document PRIVATE -fno-exceptions)
 
-add_executable(mapedit src/Main.cpp src/MapEditor.cpp)
+add_executable(mapedit src/Main.cpp src/MapEditor.cpp src/PlaytestProcess.cpp)
 target_compile_features(mapedit PRIVATE cxx_std_23)
 target_compile_options(mapedit PRIVATE -fno-exceptions -Wno-missing-field-initializers)
 target_link_libraries(mapedit PRIVATE idkengine idkmapedit_document idkeditor_viewport idklevel_build)

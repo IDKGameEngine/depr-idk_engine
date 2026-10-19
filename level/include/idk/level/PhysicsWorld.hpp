@@ -12,7 +12,8 @@ namespace idk::level
     {
     public:
         ~PhysicsWorld();
-        bool initialize(Error &);
+        // Storage must outlive the world. Reclaim it after shutdown.
+        bool initialize(idk::Arena &storage, Error &);
         void shutdown();
         bool prepareTerrain(const Level &, Error &);
         void discardTerrain();
@@ -23,6 +24,5 @@ namespace idk::level
         friend class Player;
         struct Impl;
         Impl *mImpl = nullptr;
-        bool mOwnsFactory = false;
     };
 }

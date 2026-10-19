@@ -96,8 +96,10 @@ namespace
         std::fputs("bad level", file);
         std::fclose(file);
 
+        alignas(16) static std::byte physicsStorage[64 * 1024];
+        Arena physics(physicsStorage);
         PhysicsWorld world;
-        CHECK(world.initialize(error));
+        CHECK(world.initialize(physics, error));
         Player player;
         CHECK(player.initialize(world, error));
         static LevelRunner::Storage storage;

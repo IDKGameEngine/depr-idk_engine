@@ -108,6 +108,27 @@ bool runTests()
     tiny.reset();
     CHECK(tiny.alloc(32, 16) && tiny.mark() == 32, "Aligned arena allocation failed");
     CHECK(!tiny.alloc(64, 16) && tiny.mark() == 32, "Arena overflow must not advance cursor");
+    tiny.reset();
+    auto retained = tiny.array<uint32_t>(2);
+    retained[0] = 42;
+    const size_t retainedMark = tiny.mark();
+    {
+        idk::ArenaScope job(tiny);
+        CHECK(tiny.alloc(16), "Temporary job allocation failed");
+        const size_t jobMark = tiny.mark();
+        {
+            idk::ArenaScope nested(tiny);
+            CHECK(!tiny.alloc(64) && tiny.failed(), "Nested exhaustion must be reported");
+        }
+        CHECK(tiny.mark() == jobMark && !tiny.failed(), "Nested rollback must restore usable parent storage");
+    }
+    CHECK(tiny.mark() == retainedMark && retained[0] == 42, "Job rollback damaged caller-owned storage");
+    {
+        idk::ArenaScope job(tiny);
+        CHECK(tiny.alloc(8), "Committed allocation failed");
+        job.commit();
+    }
+    CHECK(tiny.mark() > retainedMark && retained[0] == 42, "Committed storage was reclaimed");
     idk::FixedList<int, 2> list;
     CHECK(list.push(1) && list.push(2) && !list.push(3) && list.size() == 2, "Bounded list must reject overflow");
     list.clear();

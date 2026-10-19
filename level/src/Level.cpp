@@ -185,17 +185,14 @@ namespace idk::level
     {
         if (!validate(error))
             return false;
-        size_t mark = arena.mark();
+        idk::ArenaScope allocations(arena);
         asset::Model candidate;
         candidate.primitives = arena.array<asset::Primitive>(terrain.size());
         candidate.materials = arena.array<asset::Material>(terrain.size());
         candidate.nodes = arena.array<asset::Node>(terrain.size());
         auto refs = arena.array<uint32_t>(terrain.size());
         if (arena.failed())
-        {
-            arena.rewind(mark);
             return error.set("Level model arena exhausted.");
-        }
         for (size_t i = 0; i < terrain.size(); ++i)
         {
             const auto &object = terrain[i];
@@ -208,6 +205,7 @@ namespace idk::level
             candidate.nodes[i].primitives = refs.subspan(i, 1);
         }
         output = candidate;
+        allocations.commit();
         return true;
     }
 
@@ -243,7 +241,7 @@ namespace idk::level
         FILE *file = path && *path ? std::fopen(path, "rb") : nullptr;
         if (!file)
             return error.set("Could not open runtime level.");
-        size_t mark = arena.mark();
+        idk::ArenaScope allocations(arena);
         Stream stream{file, false};
         char magic[8]{};
         uint32_t version = 0, count = 0;
@@ -294,16 +292,11 @@ namespace idk::level
         if (std::fclose(file) != 0)
             ok = false;
         if (!ok)
-        {
-            arena.rewind(mark);
             return error.set("Invalid, truncated, oversized or unsupported runtime level.");
-        }
         if (!candidate.validate(error))
-        {
-            arena.rewind(mark);
             return false;
-        }
         output = candidate;
+        allocations.commit();
         return true;
     }
 

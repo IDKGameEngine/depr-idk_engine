@@ -7,7 +7,7 @@ target_link_libraries(idkeditor_shapes PUBLIC idkengine_assets)
 target_compile_options(idkeditor_shapes PRIVATE -fno-exceptions)
 
 # The model and map editors share rendering, navigation, picking and gizmos.
-add_library(idkeditor_viewport STATIC src/EditorViewport.cpp src/ScenePreview.cpp)
+add_library(idkeditor_viewport STATIC src/EditorGui.cpp src/EditorViewport.cpp src/ScenePreview.cpp)
 target_compile_features(idkeditor_viewport PUBLIC cxx_std_23)
 target_link_libraries(idkeditor_viewport PUBLIC idkeditor_shapes idkengine_gfx IdkThirdParty::imgui imguizmo::imguizmo)
 target_compile_options(idkeditor_viewport PRIVATE -fno-exceptions -Wno-missing-field-initializers)

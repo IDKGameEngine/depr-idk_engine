@@ -144,6 +144,8 @@ descriptor scratch. Version 1 artifacts remain readable with no destination.
 Failed loads rewind the arena and retain the caller's previous level. File
 writes use a temporary file in the output directory and publish atomically.
 Jolt owns its collision allocations and uses an 8 MiB update scratch allocator.
+`PhysicsWorld::initialize()` takes a persistent arena for the world and factory
+records; the playtest supplies 64 KiB. Reclaim that storage after world shutdown.
 The persistent physics world owns active and, during preparation, staged terrain;
 the player owns its character controller independently of level data.
 

@@ -17,17 +17,14 @@ namespace idk::level
         uint32_t count = session.document().count();
         if (count < 3)
             return error.set("Build requires at least one terrain object.");
-        size_t mark = arena.mark();
+        idk::ArenaScope allocations(arena);
         Level candidate;
         candidate.entry = {entry->position, entry->rotation, entry->scale};
         candidate.exit = {exit->position, exit->rotation, exit->scale};
         candidate.destination = session.destination();
         candidate.terrain = arena.array<Terrain>(count - 2);
         if (arena.failed())
-        {
-            arena.rewind(mark);
             return error.set("Level build arena exhausted.");
-        }
         uint32_t next = 0;
         for (uint32_t slot = 0; slot < editor::ShapeDocument::Capacity; ++slot)
         {
@@ -35,16 +32,10 @@ namespace idk::level
             if (!source || session.role(slot) != mapedit::ObjectRole::Terrain)
                 continue;
             if (uint32_t(source->shape) >= editor::ShapeDocument::ShapeCount)
-            {
-                arena.rewind(mark);
                 return error.set("Level builder currently accepts primitive terrain only.");
-            }
             for (unsigned i = 0; i < 3; ++i)
                 if (!std::isfinite(source->scale[i]) || std::abs(source->scale[i]) < .001f)
-                {
-                    arena.rewind(mark);
                     return error.set("Terrain scales must have magnitude at least 0.001.");
-                }
             const auto &geometry = session.document().geometry(*source);
             auto &destination = candidate.terrain[next++];
             std::memcpy(destination.name, source->name, 48);
@@ -53,10 +44,7 @@ namespace idk::level
             destination.vertices = arena.array<asset::Vertex>(geometry.vertices.size());
             destination.indices = arena.array<uint32_t>(geometry.indices.size());
             if (arena.failed())
-            {
-                arena.rewind(mark);
                 return error.set("Level build arena exhausted.");
-            }
             auto transform = source->transform();
             auto normalMatrix = glm::transpose(glm::inverse(glm::mat3(transform)));
             bool mirrored = glm::determinant(glm::mat3(transform)) < 0;
@@ -76,11 +64,9 @@ namespace idk::level
                     std::swap(destination.indices[i + 1], destination.indices[i + 2]);
         }
         if (!candidate.validate(error))
-        {
-            arena.rewind(mark);
             return false;
-        }
         output = candidate;
+        allocations.commit();
         return true;
     }
 

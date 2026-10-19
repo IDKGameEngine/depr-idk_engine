@@ -7,6 +7,11 @@
 
 namespace idk::level
 {
+    LevelRunner::~LevelRunner()
+    {
+        shutdown();
+    }
+
     bool LevelRunner::initialize(Storage &storage, PhysicsWorld &world, Player &player, gfx::RenderEngine &renderer,
                                  const char *root, Error &error)
     {

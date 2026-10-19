@@ -4,6 +4,11 @@
 #include "PhysicsWorld.hpp"
 #include "libidk/Types.hpp"
 
+namespace JPH
+{
+    class CharacterVirtual;
+}
+
 namespace idk::level
 {
     // A 1.8m capsule with a 0.3m radius. Position denotes the player's feet.
@@ -20,7 +25,7 @@ namespace idk::level
         bool grounded() const;
 
     private:
-        struct Impl;
-        Impl *mImpl = nullptr;
+        PhysicsWorld *mWorld = nullptr;
+        JPH::CharacterVirtual *mCharacter = nullptr; // One owned Jolt reference.
     };
 } // namespace idk::level

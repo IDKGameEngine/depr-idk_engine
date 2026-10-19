@@ -1,11 +1,10 @@
 #pragma once
 
 #include "MapSession.hpp"
+#include "PlaytestProcess.hpp"
 #include "idk/editor/EditorViewport.hpp"
 #include "idk/editor/ScenePreview.hpp"
 #include "libidk/Service.hpp"
-
-struct SDL_Process;
 
 namespace idk::mapedit
 {
@@ -38,9 +37,7 @@ namespace idk::mapedit
         char mOverwritePath[1024]{};
         bool mConfirmOverwrite = false;
         char mBuildPath[1024] = "level.idklvl";
-        char mPlayDirectory[64]{};
-        char mPlayPath[128]{};
-        SDL_Process *mPlaytest = nullptr;
+        PlaytestProcess mPlaytest;
 
         Action draw(gfx::RenderEngine &);
         Action drawFiles();
@@ -51,8 +48,6 @@ namespace idk::mapedit
         void execute(Action, gfx::RenderEngine &);
         void buildLevel(bool play);
         void pollPlaytest();
-        void stopPlaytest();
-        void cleanPlaytest();
         static void onGenericEventCallback(idk::EngineAPI &, const void *);
     };
 } // namespace idk::mapedit
