@@ -1,6 +1,7 @@
 #include "idk/mapedit/MapEditor.hpp"
 #include "idk/gfx/RenderEngine.hpp"
 #include "idk/EngineAPI.hpp"
+#include "idk/level/Build.hpp"
 #include <imgui.h>
 #include <ImGuizmo.h>
 #include <imgui_impl_sdl3.h>
@@ -11,6 +12,9 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace idk::mapedit
 {
@@ -69,6 +73,7 @@ namespace idk::mapedit
 
     void MapEditorApplication::onShutdown(EngineAPI& api)
     {
+        stopPlaytest();
         if (!mInitialized)
             return;
         if (auto* renderer = api.getService<gfx::RenderEngine>())
@@ -206,6 +211,23 @@ namespace idk::mapedit
         if (ImGui::Button("Save"))
             action = Action::Save;
         ImGui::EndDisabled();
+        ImGui::SeparatorText("Build / playtest");
+        ImGui::SetNextItemWidth(-1);
+        ImGui::InputText("##RuntimePath", mBuildPath, sizeof(mBuildPath));
+        ImGui::TextDisabled("Build replaces this .idklvl output file.");
+        ImGui::BeginDisabled(!mBuildPath[0]);
+        if (ImGui::Button("Build level"))
+            action = Action::Build;
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        if (mPlaytest)
+        {
+            if (ImGui::Button("Stop playtest"))
+                action = Action::Stop;
+        }
+        else if (ImGui::Button("Build & Play"))
+            action = Action::Play;
+        ImGui::TextWrapped("Build uses the current level, including unsaved changes.");
         if (mSession.status()[0])
             ImGui::TextWrapped("%s", mSession.status());
         return action;
@@ -332,7 +354,125 @@ namespace idk::mapedit
             case Action::Replace:
                 mSession.save(mOverwritePath, true);
                 break;
+            case Action::Build:
+                buildLevel(false);
+                break;
+            case Action::Play:
+                buildLevel(true);
+                break;
+            case Action::Stop:
+                stopPlaytest();
+                mSession.setStatus("Playtest stopped.");
+                break;
         }
+    }
+
+    void MapEditorApplication::cleanPlaytest()
+    {
+        if (mPlayPath[0])
+            unlink(mPlayPath);
+        if (mPlayDirectory[0])
+            rmdir(mPlayDirectory);
+        mPlayPath[0] = mPlayDirectory[0] = 0;
+    }
+
+    void MapEditorApplication::stopPlaytest()
+    {
+        if (mPlaytest)
+        {
+            SDL_KillProcess(mPlaytest, true);
+            SDL_WaitProcess(mPlaytest, true, nullptr);
+            SDL_DestroyProcess(mPlaytest);
+            mPlaytest = nullptr;
+        }
+        cleanPlaytest();
+    }
+
+    void MapEditorApplication::pollPlaytest()
+    {
+        int code = 0;
+        if (!mPlaytest || !SDL_WaitProcess(mPlaytest, false, &code))
+            return;
+        SDL_DestroyProcess(mPlaytest);
+        mPlaytest = nullptr;
+        cleanPlaytest();
+        char message[128];
+        std::snprintf(message, sizeof(message), "Playtest finished (exit code %d).", code);
+        mSession.setStatus(message);
+    }
+
+    void MapEditorApplication::buildLevel(bool play)
+    {
+        alignas(16) static std::byte storage[4 * 1024 * 1024];
+        idk::Arena arena(storage);
+        level::Level result;
+        level::Error error;
+        if (!level::Build(mSession, arena, result, error))
+        {
+            mSession.setStatus(error.message);
+            return;
+        }
+        if (!play)
+        {
+            size_t length = std::strlen(mBuildPath);
+            struct stat source{}, destination{};
+            bool same = !std::strcmp(mPath, mBuildPath) ||
+                        (stat(mPath, &source) == 0 && stat(mBuildPath, &destination) == 0 &&
+                         source.st_dev == destination.st_dev && source.st_ino == destination.st_ino);
+            if (same || length < 7 || std::strcmp(mBuildPath + length - 7, ".idklvl"))
+            {
+                mSession.setStatus("Choose a separate .idklvl runtime output; the source map is preserved.");
+                return;
+            }
+            if (!level::Save(result, mBuildPath, error, true))
+                mSession.setStatus(error.message);
+            else
+                mSession.setStatus("Runtime level built successfully.");
+            return;
+        }
+        if (mPlaytest)
+            return;
+        std::snprintf(mPlayDirectory, sizeof(mPlayDirectory), "/tmp/idk-playtest-XXXXXX");
+        if (!mkdtemp(mPlayDirectory))
+        {
+            mPlayDirectory[0] = 0;
+            mSession.setStatus("Could not create a temporary playtest directory.");
+            return;
+        }
+        std::snprintf(mPlayPath, sizeof(mPlayPath), "%s/level.idklvl", mPlayDirectory);
+        if (!level::Save(result, mPlayPath, error))
+        {
+            mSession.setStatus(error.message);
+            cleanPlaytest();
+            return;
+        }
+        char executable[4096];
+        const char* base = SDL_GetBasePath();
+        if (!base)
+        {
+            mSession.setStatus("Could not locate the playtest executable directory.");
+            cleanPlaytest();
+            return;
+        }
+        int length = std::snprintf(executable, sizeof(executable), "%s%s", base, IDK_PLAYTEST_EXECUTABLE);
+        if (length < 0 || size_t(length) >= sizeof(executable))
+        {
+            mSession.setStatus("Playtest executable path is too long.");
+            cleanPlaytest();
+            return;
+        }
+        const char* arguments[] = {executable, "--level", mPlayPath, nullptr};
+        mPlaytest = SDL_CreateProcess(arguments, false);
+        if (!mPlaytest)
+        {
+            char message[640];
+            std::snprintf(message, sizeof(message),
+                          "Playtest launch failed: %s. Build and install the game alongside mapedit.", SDL_GetError());
+            mSession.setStatus(message);
+            cleanPlaytest();
+            return;
+        }
+        mSession.setStatus("Playtest running. Esc in the game returns here; Stop playtest closes it.");
     }
 
     void MapEditorApplication::onPreRender(EngineAPI& api)
@@ -340,6 +480,7 @@ namespace idk::mapedit
         if (!mInitialized)
             return;
         auto& renderer = *api.getService<gfx::RenderEngine>();
+        pollPlaytest();
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();

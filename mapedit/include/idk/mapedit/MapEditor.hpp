@@ -5,6 +5,8 @@
 #include "idk/editor/ScenePreview.hpp"
 #include "libidk/Service.hpp"
 
+struct SDL_Process;
+
 namespace idk::mapedit
 {
     class MapEditorApplication final : public idk::Service
@@ -22,7 +24,10 @@ namespace idk::mapedit
             New,
             Open,
             Save,
-            Replace
+            Replace,
+            Build,
+            Play,
+            Stop
         };
 
         bool mInitialized = false;
@@ -32,6 +37,10 @@ namespace idk::mapedit
         char mPath[1024] = "level.idkmap";
         char mOverwritePath[1024]{};
         bool mConfirmOverwrite = false;
+        char mBuildPath[1024] = "level.idklvl";
+        char mPlayDirectory[64]{};
+        char mPlayPath[128]{};
+        SDL_Process* mPlaytest = nullptr;
 
         Action draw(gfx::RenderEngine&);
         Action drawFiles();
@@ -40,6 +49,10 @@ namespace idk::mapedit
         void drawObjects();
         void drawInspector();
         void execute(Action, gfx::RenderEngine&);
+        void buildLevel(bool play);
+        void pollPlaytest();
+        void stopPlaytest();
+        void cleanPlaytest();
         static void onGenericEventCallback(idk::EngineAPI&, const void*);
     };
 } // namespace idk::mapedit

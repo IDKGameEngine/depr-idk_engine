@@ -63,8 +63,12 @@ cylinder=2, plane=3. Entry uses a cylinder and exit uses a box. Names occupy a
 single line of at most 47 bytes; numbers must be finite. Files contain LF or
 CRLF line endings and end after the final record's newline. Unknown versions,
 duplicate markers, invalid records, and more than 64 objects are rejected.
-This initial tool edits primitive level layouts; game-side loading, collision,
-model placement, and playtesting are future work.
+Use **Build level** to write a `.idklvl` runtime artifact, or **Build & Play** to
+launch the game with the current document, including unsaved changes. Builds
+require terrain, entry, and exit. **Stop playtest** closes the child game.
+See the [level build/playtest pipeline](../level/README.md) for compiler usage,
+movement controls, collision, and artifact details. Imported model placement
+remains future work.
 
 `MapSession` owns the map roles and file operations. Geometry, rendering,
 selection, camera controls, and gizmos are shared with the model editor through
