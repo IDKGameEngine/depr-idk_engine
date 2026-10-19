@@ -13,36 +13,34 @@
 #define IDK_GFX_SLANG_HPP
 
 #ifdef __cplusplus
-    #include "defs.hpp"
-    #define IDK_SLANG_NAMESPACE idk::gfx::slang
-    #define IDK_GPU_CONST static constexpr
+#include "defs.hpp"
+#define IDK_SLANG_NAMESPACE idk::gfx::slang
+#define IDK_GPU_CONST static constexpr
 #else
-    #include "defs.slang"
-    #define IDK_SLANG_NAMESPACE idk
-    #define IDK_GPU_CONST static const
+#include "defs.slang"
+#define IDK_SLANG_NAMESPACE idk
+#define IDK_GPU_CONST static const
 #endif
 
+#define UBO_STRUCT(Idx_, Content_)                                                                                     \
+    struct UniformBuffer0##Idx_                                                                                        \
+    {                                                                                                                  \
+        IDK_GPU_CONST uint32_t BIND_IDX = Idx_;                                                                        \
+        Content_                                                                                                       \
+    }
 
-#define UBO_STRUCT(Idx_, Content_) \
-struct UniformBuffer0##Idx_ \
-{ \
-    IDK_GPU_CONST uint32_t BIND_IDX = Idx_; \
-    Content_ \
-}
-
-#define SSBO_STRUCT(Idx_, Content_) \
-struct StorageBuffer0##Idx_ \
-{ \
-    IDK_GPU_CONST uint32_t BIND_IDX = Idx_; \
-    Content_ \
-}
-
+#define SSBO_STRUCT(Idx_, Content_)                                                                                    \
+    struct StorageBuffer0##Idx_                                                                                        \
+    {                                                                                                                  \
+        IDK_GPU_CONST uint32_t BIND_IDX = Idx_;                                                                        \
+        Content_                                                                                                       \
+    }
 
 namespace IDK_SLANG_NAMESPACE
 {
-    IDK_GPU_CONST uint32_t UBO_BIND_BASE  = 0;
+    IDK_GPU_CONST uint32_t UBO_BIND_BASE = 0;
     IDK_GPU_CONST uint32_t SSBO_BIND_BASE = 0;
-    IDK_GPU_CONST uint32_t IMG_BIND_BASE  = 0;
+    IDK_GPU_CONST uint32_t IMG_BIND_BASE = 0;
 
     struct GlobalData
     {
@@ -56,8 +54,8 @@ namespace IDK_SLANG_NAMESPACE
         float currTime;
         float deltaTime;
         float timescale;
-        vec2  winSize;
-        vec2  padding1;
+        vec2 winSize;
+        vec2 padding1;
     };
 
     struct PerCameraData
@@ -66,7 +64,6 @@ namespace IDK_SLANG_NAMESPACE
         mat4 View;
         mat4 Proj;
     };
-
 
     struct PerDrawData
     {
@@ -83,16 +80,16 @@ namespace IDK_SLANG_NAMESPACE
 
     IDK_GPU_CONST uint32_t BIND_ALBEDO = 5;
 
-    IDK_GPU_CONST uint32_t BIND_NBODY_IN  = SSBO_BIND_BASE + 4;
+    IDK_GPU_CONST uint32_t BIND_NBODY_IN = SSBO_BIND_BASE + 4;
     IDK_GPU_CONST uint32_t BIND_NBODY_OUT = SSBO_BIND_BASE + 5;
 
     struct NBodyVertex
     {
-        IDK_GPU_CONST float    MIN_MASS   = 16.0f;
-        IDK_GPU_CONST float    MAX_MASS   = 512.0f;
-        IDK_GPU_CONST uint32_t MAX_BODIES = 1*1024;
+        IDK_GPU_CONST float MIN_MASS = 16.0f;
+        IDK_GPU_CONST float MAX_MASS = 512.0f;
+        IDK_GPU_CONST uint32_t MAX_BODIES = 1 * 1024;
         IDK_GPU_CONST uint32_t GROUP_SIZE = 32;
-        
+
         vec4 pos;
         vec4 vel;
         vec4 acc;

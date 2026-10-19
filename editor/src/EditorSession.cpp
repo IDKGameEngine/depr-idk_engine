@@ -4,7 +4,7 @@
 
 namespace idk::editor
 {
-    bool EditorSession::initialize(Storage& storage)
+    bool EditorSession::initialize(Storage &storage)
     {
         idk::Arena shapes(storage.shapes);
         if (!mDocument.initialize(shapes))
@@ -16,7 +16,7 @@ namespace idk::editor
         return true;
     }
 
-    bool EditorSession::prepareImport(const char* path, bool replace, ImportCandidate& candidate)
+    bool EditorSession::prepareImport(const char *path, bool replace, ImportCandidate &candidate)
     {
         if (!mStorage)
             return false;
@@ -43,7 +43,7 @@ namespace idk::editor
         return true;
     }
 
-    void EditorSession::commitImport(const ImportCandidate& candidate, const char* path)
+    void EditorSession::commitImport(const ImportCandidate &candidate, const char *path)
     {
         mDocument = candidate.document;
         mImportBank = candidate.bank;
@@ -51,7 +51,7 @@ namespace idk::editor
         std::snprintf(mStatus, sizeof(mStatus), "Imported %s (%u objects in model)", path, mDocument.count());
     }
 
-    EditorSession::ExportResult EditorSession::exportModel(const char* path, bool overwrite)
+    EditorSession::ExportResult EditorSession::exportModel(const char *path, bool overwrite)
     {
         if (!mStorage)
             return ExportResult::Failed;

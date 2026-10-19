@@ -11,7 +11,7 @@ namespace idk::editor
 {
     namespace
     {
-        bool initializeGui(gfx::RenderEngine& renderer)
+        bool initializeGui(gfx::RenderEngine &renderer)
         {
             IMGUI_CHECKVERSION();
             ImGui::CreateContext();
@@ -23,7 +23,7 @@ namespace idk::editor
             ImGui::GetStyle().ScaleAllSizes(scale);
             ImGui::GetStyle().FontScaleDpi = scale;
             ImGui::GetIO().ConfigDpiScaleFonts = true;
-            if (!ImGui_ImplSDL3_InitForOpenGL(static_cast<SDL_Window*>(renderer.GetWindowHandle()),
+            if (!ImGui_ImplSDL3_InitForOpenGL(static_cast<SDL_Window *>(renderer.GetWindowHandle()),
                                               renderer.GetContextHandle()))
             {
                 ImGui::DestroyContext();
@@ -39,9 +39,9 @@ namespace idk::editor
         }
     } // namespace
 
-    void EditorApplication::onInit(EngineAPI& api)
+    void EditorApplication::onInit(EngineAPI &api)
     {
-        auto* renderer = api.getService<gfx::RenderEngine>();
+        auto *renderer = api.getService<gfx::RenderEngine>();
         if (!renderer || !renderer->IsInitialized() || !initializeGui(*renderer))
         {
             api.quit();
@@ -65,16 +65,16 @@ namespace idk::editor
             return;
         }
         renderer->SetClearColor({.075f, .085f, .105f, 1});
-        SDL_SetWindowTitle(static_cast<SDL_Window*>(renderer->GetWindowHandle()), "idk - Shape model editor");
+        SDL_SetWindowTitle(static_cast<SDL_Window *>(renderer->GetWindowHandle()), "idk - Shape model editor");
         mSession.addShape(asset::ShapeKind::Box);
     }
 
-    void EditorApplication::onShutdown(EngineAPI& api)
+    void EditorApplication::onShutdown(EngineAPI &api)
     {
         mUI.shutdown();
         if (!mInitialized)
             return;
-        if (auto* renderer = api.getService<gfx::RenderEngine>())
+        if (auto *renderer = api.getService<gfx::RenderEngine>())
             mPreview.shutdown(*renderer);
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplSDL3_Shutdown();
@@ -82,7 +82,7 @@ namespace idk::editor
         mInitialized = false;
     }
 
-    void EditorApplication::importModel(const EditorAction& action, gfx::RenderEngine& renderer)
+    void EditorApplication::importModel(const EditorAction &action, gfx::RenderEngine &renderer)
     {
         EditorSession::ImportCandidate candidate;
         if (!mSession.prepareImport(action.path, action.replace, candidate))
@@ -90,7 +90,7 @@ namespace idk::editor
             mUI.showImportError(mSession.status());
             return;
         }
-        const char* error = nullptr;
+        const char *error = nullptr;
         if (!mPreview.rebuild(renderer, candidate.document, error))
         {
             mUI.showImportError(error);
@@ -100,7 +100,7 @@ namespace idk::editor
         mViewport.frameAll(mSession.document());
     }
 
-    void EditorApplication::execute(const EditorAction& action, gfx::RenderEngine& renderer)
+    void EditorApplication::execute(const EditorAction &action, gfx::RenderEngine &renderer)
     {
         switch (action.type)
         {
@@ -112,7 +112,7 @@ namespace idk::editor
                 mViewport.resetCamera();
                 break;
             case EditorAction::Type::ChooseImportFile:
-                mUI.chooseImportFile(static_cast<SDL_Window*>(renderer.GetWindowHandle()));
+                mUI.chooseImportFile(static_cast<SDL_Window *>(renderer.GetWindowHandle()));
                 break;
             case EditorAction::Type::Import:
                 importModel(action, renderer);
@@ -124,23 +124,23 @@ namespace idk::editor
         }
     }
 
-    void EditorApplication::onPreRender(EngineAPI& api)
+    void EditorApplication::onPreRender(EngineAPI &api)
     {
         if (!mInitialized)
             return;
-        auto& renderer = *api.getService<gfx::RenderEngine>();
+        auto &renderer = *api.getService<gfx::RenderEngine>();
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
         ImGuizmo::BeginFrame();
         auto action = mUI.draw(mSession, mViewport, renderer);
         execute(action, renderer);
-        const char* error = nullptr;
+        const char *error = nullptr;
         if (!mPreview.submit(renderer, mSession.document(), error))
             mSession.setStatus(error);
     }
 
-    void EditorApplication::onMidRender(EngineAPI&)
+    void EditorApplication::onMidRender(EngineAPI &)
     {
         if (!mInitialized)
             return;
@@ -148,9 +148,9 @@ namespace idk::editor
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
-    void EditorApplication::onGenericEventCallback(EngineAPI&, const void* event)
+    void EditorApplication::onGenericEventCallback(EngineAPI &, const void *event)
     {
         if (ImGui::GetCurrentContext())
-            ImGui_ImplSDL3_ProcessEvent(static_cast<const SDL_Event*>(event));
+            ImGui_ImplSDL3_ProcessEvent(static_cast<const SDL_Event *>(event));
     }
 } // namespace idk::editor

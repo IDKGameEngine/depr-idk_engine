@@ -9,7 +9,15 @@
 
 namespace idk::gfx
 {
-    enum class VertexAttribType : uint8_t { Float, Float2, Float3, Float4, UByte4Norm };
+    enum class VertexAttribType : uint8_t
+    {
+        Float,
+        Float2,
+        Float3,
+        Float4,
+        UByte4Norm
+    };
+
     struct VertexAttribute
     {
         uint32_t location = 0;
@@ -20,28 +28,56 @@ namespace idk::gfx
     // Input spans/pointers are consumed synchronously by Create*.
     struct MeshDesc
     {
-        const void* vertexData = nullptr;
+        const void *vertexData = nullptr;
         size_t vertexCount = 0;
         size_t vertexStride = 0;
-        const uint32_t* indices = nullptr;
+        const uint32_t *indices = nullptr;
         size_t indexCount = 0;
         std::span<const VertexAttribute> attributes;
     };
 
-    enum class TexFormat : uint8_t { R8, RGB8, RGBA8, SRGBA8, RGBA16F, RGBA32F };
+    enum class TexFormat : uint8_t
+    {
+        R8,
+        RGB8,
+        RGBA8,
+        SRGBA8,
+        RGBA16F,
+        RGBA32F
+    };
+
     struct TextureDesc
     {
         uint32_t width = 0;
         uint32_t height = 0;
         TexFormat format = TexFormat::RGBA8;
         // Tightly packed rows; floating point formats accept float components.
-        const void* pixels = nullptr;
+        const void *pixels = nullptr;
         bool genMipmaps = true;
     };
 
-    enum class TextureFilter : uint8_t { Nearest, Linear };
-    enum class TextureWrap : uint8_t { Repeat, ClampToEdge, MirroredRepeat };
-    enum class TextureMinFilter : uint8_t { Default, Nearest, Linear, NearestMipmapNearest, LinearMipmapNearest, NearestMipmapLinear, LinearMipmapLinear };
+    enum class TextureFilter : uint8_t
+    {
+        Nearest,
+        Linear
+    };
+    enum class TextureWrap : uint8_t
+    {
+        Repeat,
+        ClampToEdge,
+        MirroredRepeat
+    };
+    enum class TextureMinFilter : uint8_t
+    {
+        Default,
+        Nearest,
+        Linear,
+        NearestMipmapNearest,
+        LinearMipmapNearest,
+        NearestMipmapLinear,
+        LinearMipmapLinear
+    };
+
     struct SamplerDesc
     {
         TextureFilter filter = TextureFilter::Linear;
@@ -57,7 +93,13 @@ namespace idk::gfx
         std::string_view label;
     };
 
-    enum class BlendMode : uint8_t { Opaque, Alpha, Mask };
+    enum class BlendMode : uint8_t
+    {
+        Opaque,
+        Alpha,
+        Mask
+    };
+
     struct MaterialDesc
     {
         ShaderHandle shader;

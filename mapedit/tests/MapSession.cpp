@@ -46,18 +46,18 @@ namespace
         }
     };
 
-    bool writeText(const char* path, const char* text)
+    bool writeText(const char *path, const char *text)
     {
-        FILE* file = std::fopen(path, "wb");
+        FILE *file = std::fopen(path, "wb");
         if (!file)
             return false;
         bool ok = std::fputs(text, file) >= 0;
         return std::fclose(file) == 0 && ok;
     }
 
-    uint64_t hashFile(const char* path)
+    uint64_t hashFile(const char *path)
     {
-        FILE* file = std::fopen(path, "rb");
+        FILE *file = std::fopen(path, "rb");
         if (!file)
             return 0;
         uint64_t hash = 14695981039346656037ull;
@@ -127,10 +127,10 @@ namespace
         CHECK(loaded.load(files.map), loaded.status());
         CHECK(!std::strcmp(loaded.destination().path, session.destination().path),
               "Exit destination did not roundtrip");
-        const char* invalidDestinations[] = {"/absolute.idklvl",   "../outside.idklvl",  "level/../outside.idklvl",
+        const char *invalidDestinations[] = {"/absolute.idklvl",   "../outside.idklvl",  "level/../outside.idklvl",
                                              "./room.idklvl",      "level//room.idklvl", "level/room.idkmap",
                                              "level\\room.idklvl", "room\n.idklvl"};
-        for (const char* destination : invalidDestinations)
+        for (const char *destination : invalidDestinations)
         {
             std::snprintf(loaded.destination().path, sizeof(loaded.destination().path), "%s", destination);
             CHECK(loaded.save(files.map, true) == MapSession::SaveResult::Failed, "Invalid exit destination was saved");
@@ -142,8 +142,8 @@ namespace
               "Map roles or object count did not roundtrip");
         for (uint32_t i = 0; i < 6; ++i)
         {
-            const auto* before = session.document().get(i);
-            const auto* after = loaded.document().get(i);
+            const auto *before = session.document().get(i);
+            const auto *after = loaded.document().get(i);
             CHECK(before && after && before->shape == after->shape && before->position == after->position &&
                       before->rotation == after->rotation && before->scale == after->scale &&
                       before->color == after->color && !std::strcmp(before->name, after->name) &&
@@ -179,9 +179,9 @@ namespace
               "Confirmed overwrite failed");
 
         // A valid first record makes later failures exercise partial-load rollback.
-        constexpr const char* box = "object 0 0\nname Floor\nposition 0 0 0\nrotation 0 0 0\n"
+        constexpr const char *box = "object 0 0\nname Floor\nposition 0 0 0\nrotation 0 0 0\n"
                                     "scale 1 1 1\ncolour 1 1 1 1\n";
-        const char* invalid[] = {
+        const char *invalid[] = {
             "",
             "IDKMAP 3\nobjects 0\n",
             "IDKMAP 2\nobjects 0\n",
@@ -205,7 +205,7 @@ namespace
             "IDKMAP 1\nobjects 2\nobject 1 2\nname Entry\nposition 0 0 0\nrotation 0 0 0\n"
             "scale 1 1 1\ncolour 1 1 1 1\nobject 1 2\n",
         };
-        for (const char* text : invalid)
+        for (const char *text : invalid)
         {
             CHECK(writeText(files.malformed, text), "Could not write malformed fixture");
             uint32_t selection = loaded.selection();

@@ -9,12 +9,27 @@
 #include <cstring>
 
 using namespace idk::gfx;
+
 namespace
 {
     int errors = 0;
-    void APIENTRY debugCallback(GLenum, GLenum type, GLuint, GLenum, GLsizei, const GLchar*, const void*)
-    { if (type == GL_DEBUG_TYPE_ERROR) ++errors; }
-#define CHECK(value, message) do { if (!(value)) { std::fprintf(stderr, "%s\n", message); return false; } } while (false)
+
+    void APIENTRY debugCallback(GLenum, GLenum type, GLuint, GLenum, GLsizei, const GLchar *, const void *)
+    {
+        if (type == GL_DEBUG_TYPE_ERROR)
+            ++errors;
+    }
+
+#define CHECK(value, message)                                                                                          \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (!(value))                                                                                                  \
+        {                                                                                                              \
+            std::fprintf(stderr, "%s\n", message);                                                                     \
+            return false;                                                                                              \
+        }                                                                                                              \
+    } while (false)
+
     std::array<uint8_t, 4> pixel(int x, int y)
     {
         std::array<uint8_t, 4> result{};
@@ -23,13 +38,20 @@ namespace
     }
 }
 
-bool runChecks(RenderEngine& renderer, idk::EngineAPI& api)
+bool runChecks(RenderEngine &renderer, idk::EngineAPI &api)
 {
     glDebugMessageCallback(debugCallback, nullptr);
 
-    struct Vertex { glm::vec3 pos; glm::vec2 uv; };
+    struct Vertex
+    {
+        glm::vec3 pos;
+        glm::vec2 uv;
+    };
+
     const Vertex vertices[] = {
-        {{-0.2f, -0.2f, 0}, {0, 0}}, {{0.2f, -0.2f, 0}, {1, 0}}, {{0, 0.2f, 0}, {0.5f, 1}},
+        {{-0.2f, -0.2f, 0}, {0, 0}},
+        {{0.2f, -0.2f, 0}, {1, 0}},
+        {{0, 0.2f, 0}, {0.5f, 1}},
     };
     const uint32_t indices[] = {0, 1, 2};
     const VertexAttribute attributes[] = {
@@ -46,8 +68,7 @@ bool runChecks(RenderEngine& renderer, idk::EngineAPI& api)
     CHECK(!renderer.CreateMesh(invalidDesc).isValid(), "Out-of-bounds mesh indices must fail");
 
     // Width 3 exercises tightly packed RGB rows and unpack-state restoration.
-    const uint8_t texels[] = {255, 255, 255, 255, 255, 255, 255, 255, 255,
-                              255, 255, 255, 255, 255, 255, 255, 255, 255};
+    const uint8_t texels[] = {255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
     glPixelStorei(GL_UNPACK_ALIGNMENT, 8);
     auto texture = renderer.CreateTexture({3, 2, TexFormat::RGB8, texels, false});
     GLint unpack = 0;
@@ -69,13 +90,13 @@ bool runChecks(RenderEngine& renderer, idk::EngineAPI& api)
     renderer.SetCamera(camera);
     renderer.SetClearColor({0, 0, 0, 1});
     renderer.onPreRender(api);
-    CHECK(renderer.Submit({mesh, material,
-        glm::translate(glm::mat4(1), glm::vec3(0.5f, 0, 0))}), "Valid draw must be accepted");
+    CHECK(renderer.Submit({mesh, material, glm::translate(glm::mat4(1), glm::vec3(0.5f, 0, 0))}),
+          "Valid draw must be accepted");
     renderer.onMidRender(api);
     auto center = pixel(64, 64);
     auto translated = pixel(93, 64);
     CHECK(center[0] < 10 && translated[0] > 240 && translated[1] < 10,
-            "Slang camera/model matrices or texture/material bindings are wrong");
+          "Slang camera/model matrices or texture/material bindings are wrong");
 
     // Failed replacement must preserve the existing linked program.
     CHECK(!renderer.ReloadShader(renderer.GetDefaultShader(), {}), "Empty shader replacement must fail");
@@ -109,7 +130,7 @@ bool runChecks(RenderEngine& renderer, idk::EngineAPI& api)
     renderer.onMidRender(api);
     center = pixel(64, 64);
     CHECK(center[0] >= 125 && center[0] <= 130 && center[1] >= 61 && center[1] <= 67,
-            "Transparent draws must blend back-to-front without depth writes");
+          "Transparent draws must blend back-to-front without depth writes");
     renderer.DestroyMaterial(alphaRed);
     renderer.DestroyMaterial(alphaGreen);
 
@@ -150,9 +171,8 @@ bool runChecks(RenderEngine& renderer, idk::EngineAPI& api)
     {
         auto topRowTexture = pixel(x, 61);
         auto bottomRowTexture = pixel(x, 74);
-        CHECK(topRowTexture[0] > 195 && topRowTexture[2] < 10 &&
-                bottomRowTexture[2] > 240 && bottomRowTexture[0] < 10,
-                "Imported texture orientation, parent transform, or mirrored instance is wrong");
+        CHECK(topRowTexture[0] > 195 && topRowTexture[2] < 10 && bottomRowTexture[2] > 240 && bottomRowTexture[0] < 10,
+              "Imported texture orientation, parent transform, or mirrored instance is wrong");
     }
     renderer.onPreRender(api);
     CHECK(renderer.SubmitModel(uploaded), "Valid model must submit before destruction");
@@ -199,14 +219,16 @@ bool runChecks(RenderEngine& renderer, idk::EngineAPI& api)
 
     // Capacity failure is explicit and cannot grow a hidden draw vector.
     auto capacityMesh = renderer.CreateMesh(meshDesc);
-    MaterialDesc capacityDesc; capacityDesc.shader = renderer.GetDefaultShader();
+    MaterialDesc capacityDesc;
+    capacityDesc.shader = renderer.GetDefaultShader();
     auto capacityMaterial = renderer.CreateMaterial(capacityDesc);
     renderer.onPreRender(api);
     for (uint32_t i = 0; i < RenderLimits::MaxDraws; ++i)
         CHECK(renderer.Submit({capacityMesh, capacityMaterial}), "Draw queue filled prematurely");
     CHECK(!renderer.Submit({capacityMesh, capacityMaterial}), "Draw queue must report overflow");
     renderer.onPreRender(api);
-    renderer.DestroyMesh(capacityMesh); renderer.DestroyMaterial(capacityMaterial);
+    renderer.DestroyMesh(capacityMesh);
+    renderer.DestroyMaterial(capacityMaterial);
 
     CHECK(errors == 0 && glGetError() == GL_NO_ERROR, "Rendering produced an OpenGL error");
     // Detach stack-owned callback data before it leaves scope.
@@ -219,14 +241,19 @@ int main()
     idk::ServiceManager services;
     idk::VideoManager video("Renderer integration test", 128, 128);
     RenderEngine renderer;
-    services.addService(&video); services.addService(&renderer);
+    services.addService(&video);
+    services.addService(&renderer);
     idk::EngineAPI api(&services);
     video.onInit(api);
     video.setWindowVisibility(false);
     renderer.onInit(api);
     bool ok = renderer.IsInitialized() && runChecks(renderer, api);
-    if (renderer.GetContextHandle()) glDebugMessageCallback(nullptr, nullptr);
-    renderer.onShutdown(api); video.onShutdown(api); SDL_Quit();
-    if (ok) std::puts("Renderer integration checks passed");
+    if (renderer.GetContextHandle())
+        glDebugMessageCallback(nullptr, nullptr);
+    renderer.onShutdown(api);
+    video.onShutdown(api);
+    SDL_Quit();
+    if (ok)
+        std::puts("Renderer integration checks passed");
     return ok ? 0 : 1;
 }

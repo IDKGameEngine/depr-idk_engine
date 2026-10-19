@@ -6,13 +6,13 @@ namespace idk::editor
 {
     namespace
     {
-        bool sameGeometry(const asset::Primitive& a, const asset::Primitive& b)
+        bool sameGeometry(const asset::Primitive &a, const asset::Primitive &b)
         {
             return a.vertices.data() == b.vertices.data() && a.vertices.size() == b.vertices.size() &&
                    a.indices.data() == b.indices.data() && a.indices.size() == b.indices.size();
         }
 
-        gfx::MeshHandle createMesh(gfx::RenderEngine& renderer, const asset::Primitive& mesh)
+        gfx::MeshHandle createMesh(gfx::RenderEngine &renderer, const asset::Primitive &mesh)
         {
             const gfx::VertexAttribute attributes[] = {
                 {0, gfx::VertexAttribType::Float3, offsetof(asset::Vertex, position)},
@@ -24,14 +24,14 @@ namespace idk::editor
                                         mesh.indices.data(), mesh.indices.size(), attributes});
         }
 
-        bool sameMaterial(const gfx::MaterialDesc& a, const gfx::MaterialDesc& b)
+        bool sameMaterial(const gfx::MaterialDesc &a, const gfx::MaterialDesc &b)
         {
             return a.shader == b.shader && a.baseColor == b.baseColor && a.blend == b.blend &&
                    a.alphaCutoff == b.alphaCutoff && a.doubleSided == b.doubleSided;
         }
     } // namespace
 
-    bool ScenePreview::initialize(gfx::RenderEngine& renderer, const ShapeDocument& document)
+    bool ScenePreview::initialize(gfx::RenderEngine &renderer, const ShapeDocument &document)
     {
         mShader = renderer.CreateShader({preview::DefaultVertex, preview::DefaultFragment, "Shape preview"});
         if (!mShader.isValid())
@@ -48,21 +48,21 @@ namespace idk::editor
         return true;
     }
 
-    void ScenePreview::release(gfx::RenderEngine& renderer, Resources& resources)
+    void ScenePreview::release(gfx::RenderEngine &renderer, Resources &resources)
     {
-        for (const auto& mesh : resources.meshes)
+        for (const auto &mesh : resources.meshes)
             renderer.DestroyMesh(mesh.handle);
-        for (const auto& material : resources.materials)
+        for (const auto &material : resources.materials)
             renderer.DestroyMaterial(material.handle);
         resources = {};
     }
 
-    void ScenePreview::clear(gfx::RenderEngine& renderer)
+    void ScenePreview::clear(gfx::RenderEngine &renderer)
     {
         release(renderer, mScene);
     }
 
-    void ScenePreview::shutdown(gfx::RenderEngine& renderer)
+    void ScenePreview::shutdown(gfx::RenderEngine &renderer)
     {
         clear(renderer);
         for (auto mesh : mShapes)
@@ -72,15 +72,15 @@ namespace idk::editor
         mShader = {};
     }
 
-    gfx::MeshHandle ScenePreview::findMesh(const Resources& resources, const asset::Primitive& geometry)
+    gfx::MeshHandle ScenePreview::findMesh(const Resources &resources, const asset::Primitive &geometry)
     {
-        for (const auto& mesh : resources.meshes)
+        for (const auto &mesh : resources.meshes)
             if (mesh.handle.isValid() && sameGeometry(mesh.geometry, geometry))
                 return mesh.handle;
         return {};
     }
 
-    gfx::MaterialDesc ScenePreview::describeMaterial(const ShapeObject& object) const
+    gfx::MaterialDesc ScenePreview::describeMaterial(const ShapeObject &object) const
     {
         gfx::MaterialDesc description;
         description.shader = mShader;
@@ -102,13 +102,13 @@ namespace idk::editor
         return description;
     }
 
-    bool ScenePreview::rebuild(gfx::RenderEngine& renderer, const ShapeDocument& document, const char*& error)
+    bool ScenePreview::rebuild(gfx::RenderEngine &renderer, const ShapeDocument &document, const char *&error)
     {
         Resources candidate;
         size_t meshCount = 0;
         for (uint32_t i = 0; i < ShapeDocument::Capacity; ++i)
         {
-            const auto* object = document.get(i);
+            const auto *object = document.get(i);
             if (!object)
                 continue;
             if (object->isImported() && !findMesh(candidate, object->mesh).isValid())
@@ -122,7 +122,7 @@ namespace idk::editor
                 }
                 candidate.meshes[meshCount++] = {object->mesh, mesh};
             }
-            auto& material = candidate.materials[i];
+            auto &material = candidate.materials[i];
             material.description = describeMaterial(*object);
             material.handle = renderer.CreateMaterial(material.description);
             if (!material.handle.isValid())
@@ -137,16 +137,16 @@ namespace idk::editor
         return true;
     }
 
-    void ScenePreview::releaseUnusedMeshes(gfx::RenderEngine& renderer, const ShapeDocument& document)
+    void ScenePreview::releaseUnusedMeshes(gfx::RenderEngine &renderer, const ShapeDocument &document)
     {
-        for (auto& mesh : mScene.meshes)
+        for (auto &mesh : mScene.meshes)
         {
             if (!mesh.handle.isValid())
                 continue;
             bool used = false;
             for (uint32_t i = 0; i < ShapeDocument::Capacity; ++i)
             {
-                const auto* object = document.get(i);
+                const auto *object = document.get(i);
                 if (object && object->isImported() && sameGeometry(mesh.geometry, object->mesh))
                 {
                     used = true;
@@ -161,14 +161,14 @@ namespace idk::editor
         }
     }
 
-    bool ScenePreview::submit(gfx::RenderEngine& renderer, const ShapeDocument& document, const char*& error)
+    bool ScenePreview::submit(gfx::RenderEngine &renderer, const ShapeDocument &document, const char *&error)
     {
         releaseUnusedMeshes(renderer, document);
         bool success = true;
         for (uint32_t i = 0; i < ShapeDocument::Capacity; ++i)
         {
-            const auto* object = document.get(i);
-            auto& material = mScene.materials[i];
+            const auto *object = document.get(i);
+            auto &material = mScene.materials[i];
             if (!object)
             {
                 renderer.DestroyMaterial(material.handle);

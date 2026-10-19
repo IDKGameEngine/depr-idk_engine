@@ -20,8 +20,8 @@ namespace idk::asset
                 return true;
             if (path[0] == '/' || length < 7 || std::strcmp(path + length - 7, ".idklvl"))
                 return false;
-            const char* segment = path;
-            for (const char* cursor = path;; ++cursor)
+            const char *segment = path;
+            for (const char *cursor = path;; ++cursor)
             {
                 unsigned char byte = static_cast<unsigned char>(*cursor);
                 if (byte && (byte < 32 || byte == 127 || byte == '\\' || byte == ':'))

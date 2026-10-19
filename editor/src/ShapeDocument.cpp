@@ -15,7 +15,7 @@ namespace idk::editor
         return glm::scale(m, scale);
     }
 
-    bool ShapeObject::setTransform(const glm::mat4& matrix)
+    bool ShapeObject::setTransform(const glm::mat4 &matrix)
     {
         for (unsigned c = 0; c < 4; ++c)
             for (unsigned r = 0; r < 4; ++r)
@@ -61,7 +61,7 @@ namespace idk::editor
         return true;
     }
 
-    bool ShapeDocument::initialize(idk::Arena& arena)
+    bool ShapeDocument::initialize(idk::Arena &arena)
     {
         if (mReady)
             return false;
@@ -84,7 +84,7 @@ namespace idk::editor
         for (uint32_t i = 0; i < Capacity; ++i)
             if (!mObjects[i].active)
             {
-                auto& object = mObjects[i];
+                auto &object = mObjects[i];
                 object = {};
                 object.active = true;
                 object.shape = kind;
@@ -100,13 +100,13 @@ namespace idk::editor
 
     uint32_t ShapeDocument::duplicate(uint32_t slot)
     {
-        auto* source = get(slot);
+        auto *source = get(slot);
         if (!source)
             return asset::NoIndex;
         for (uint32_t next = 0; next < Capacity; ++next)
             if (!mObjects[next].active)
             {
-                auto& object = mObjects[next];
+                auto &object = mObjects[next];
                 object = *source;
                 object.position += glm::vec3(.25f, 0, .25f);
                 if (source->isImported())
@@ -122,7 +122,7 @@ namespace idk::editor
 
     bool ShapeDocument::remove(uint32_t slot)
     {
-        auto* object = get(slot);
+        auto *object = get(slot);
         if (!object)
             return false;
         *object = {};
@@ -137,32 +137,32 @@ namespace idk::editor
     uint32_t ShapeDocument::count() const
     {
         uint32_t count = 0;
-        for (const auto& object : mObjects)
+        for (const auto &object : mObjects)
             count += object.active;
         return count;
     }
 
-    ShapeObject* ShapeDocument::get(uint32_t slot)
+    ShapeObject *ShapeDocument::get(uint32_t slot)
     {
         return slot < Capacity && mObjects[slot].active ? &mObjects[slot] : nullptr;
     }
 
-    const ShapeObject* ShapeDocument::get(uint32_t slot) const
+    const ShapeObject *ShapeDocument::get(uint32_t slot) const
     {
         return slot < Capacity && mObjects[slot].active ? &mObjects[slot] : nullptr;
     }
 
-    const asset::Primitive& ShapeDocument::geometry(asset::ShapeKind kind) const
+    const asset::Primitive &ShapeDocument::geometry(asset::ShapeKind kind) const
     {
         return mGeometry[uint32_t(kind)];
     }
 
-    const asset::Primitive& ShapeDocument::geometry(const ShapeObject& object) const
+    const asset::Primitive &ShapeDocument::geometry(const ShapeObject &object) const
     {
         return object.isImported() ? object.mesh : geometry(object.shape);
     }
 
-    bool ShapeDocument::snapshot(idk::Arena& arena, asset::Model& model) const
+    bool ShapeDocument::snapshot(idk::Arena &arena, asset::Model &model) const
     {
         model = {};
         uint32_t size = count();
@@ -180,19 +180,19 @@ namespace idk::editor
             return false;
         }
         uint32_t index = 0;
-        for (const auto& object : mObjects)
+        for (const auto &object : mObjects)
             if (object.active)
             {
                 refs[index] = index;
-                auto& primitive = model.primitives[index];
+                auto &primitive = model.primitives[index];
                 primitive = geometry(object);
                 primitive.material = index;
                 primitive.name = object.name;
-                auto& material = model.materials[index];
+                auto &material = model.materials[index];
                 material = object.material;
                 material.name = object.name;
                 material.baseColor = object.color;
-                auto& node = model.nodes[index];
+                auto &node = model.nodes[index];
                 node.name = object.name;
                 node.localTransform = object.transform();
                 node.primitives = refs.subspan(index, 1);
@@ -206,7 +206,7 @@ namespace idk::editor
         uint32_t selected = asset::NoIndex;
         float nearest = std::numeric_limits<float>::max();
         for (uint32_t i = 0; i < Capacity; ++i)
-            if (const auto* object = get(i))
+            if (const auto *object = get(i))
             {
                 auto matrix = object->transform();
                 if (std::abs(glm::determinant(matrix)) < 1e-12f)
@@ -214,7 +214,7 @@ namespace idk::editor
                 auto inverse = glm::inverse(matrix);
                 auto start = glm::vec3(inverse * glm::vec4(origin, 1));
                 auto ray = glm::vec3(inverse * glm::vec4(direction, 0));
-                const auto& mesh = geometry(*object);
+                const auto &mesh = geometry(*object);
                 size_t count = mesh.indices.empty() ? mesh.vertices.size() : mesh.indices.size();
                 for (size_t k = 0; k < count; k += 3)
                 {
@@ -244,16 +244,16 @@ namespace idk::editor
         return selected;
     }
 
-    bool ShapeDocument::bounds(glm::vec3& minimum, glm::vec3& maximum, uint32_t slot) const
+    bool ShapeDocument::bounds(glm::vec3 &minimum, glm::vec3 &maximum, uint32_t slot) const
     {
         bool found = false;
         for (uint32_t i = 0; i < Capacity; ++i)
-            if (const auto* object = get(i))
+            if (const auto *object = get(i))
             {
                 if (slot != asset::NoIndex && i != slot)
                     continue;
                 auto matrix = object->transform();
-                for (const auto& vertex : geometry(*object).vertices)
+                for (const auto &vertex : geometry(*object).vertices)
                 {
                     glm::vec3 point(matrix * glm::vec4(vertex.position, 1));
                     if (!found)

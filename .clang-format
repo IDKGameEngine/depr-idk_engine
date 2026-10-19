@@ -8,7 +8,12 @@ AllowShortLoopsOnASingleLine: false
 AllowShortBlocksOnASingleLine: Never
 SortIncludes: Never
 SeparateDefinitionBlocks: Always
-PointerAlignment: Left
-ReferenceAlignment: Left
+PointerAlignment: Right
+ReferenceAlignment: Right
 IndentCaseLabels: true
 FixNamespaceComments: false
+AccessModifierOffset: -4
+SpaceBeforeInheritanceColon: false
+AlwaysBreakTemplateDeclarations: Yes
+BraceWrapping:
+    SplitEmptyRecord: false

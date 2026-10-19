@@ -33,15 +33,15 @@ namespace idk::editor
     // child window. All document changes go through the session.
     class EditorViewport
     {
-      public:
-        void draw(ShapeSession&, gfx::RenderEngine&, const char* title = "Shape model builder", bool grid = false);
+    public:
+        void draw(ShapeSession &, gfx::RenderEngine &, const char *title = "Shape model builder", bool grid = false);
         void resetCamera();
-        void focusSelection(const ShapeSession&);
-        void frameAll(const ShapeDocument&);
+        void focusSelection(const ShapeSession &);
+        void frameAll(const ShapeDocument &);
 
-        TransformSettings& tools() { return mTools; }
+        TransformSettings &tools() { return mTools; }
 
-      private:
+    private:
         struct Canvas
         {
             glm::vec2 origin;
@@ -61,11 +61,11 @@ namespace idk::editor
         OrbitCamera mCamera;
         TransformSettings mTools;
 
-        void focus(const ShapeDocument&, uint32_t slot);
-        gfx::Camera navigate(const Canvas&);
-        void configureViewport(gfx::RenderEngine&, const Canvas&);
-        void handleShortcuts(ShapeSession&);
-        void manipulate(ShapeSession&, const gfx::Camera&);
-        void pick(ShapeSession&, const Canvas&, const gfx::Camera&);
+        void focus(const ShapeDocument &, uint32_t slot);
+        gfx::Camera navigate(const Canvas &);
+        void configureViewport(gfx::RenderEngine &, const Canvas &);
+        void handleShortcuts(ShapeSession &);
+        void manipulate(ShapeSession &, const gfx::Camera &);
+        void pick(ShapeSession &, const Canvas &, const gfx::Camera &);
     };
 } // namespace idk::editor

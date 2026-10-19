@@ -8,10 +8,10 @@
 
 namespace idk::level
 {
-    bool Build(const mapedit::MapSession& session, idk::Arena& arena, Level& output, Error& error)
+    bool Build(const mapedit::MapSession &session, idk::Arena &arena, Level &output, Error &error)
     {
-        const auto* entry = session.document().get(session.marker(mapedit::ObjectRole::Entry));
-        const auto* exit = session.document().get(session.marker(mapedit::ObjectRole::Exit));
+        const auto *entry = session.document().get(session.marker(mapedit::ObjectRole::Entry));
+        const auto *exit = session.document().get(session.marker(mapedit::ObjectRole::Exit));
         if (!entry || !exit)
             return error.set("Build requires one spawn / entry marker and one exit marker.");
         uint32_t count = session.document().count();
@@ -31,7 +31,7 @@ namespace idk::level
         uint32_t next = 0;
         for (uint32_t slot = 0; slot < editor::ShapeDocument::Capacity; ++slot)
         {
-            const auto* source = session.document().get(slot);
+            const auto *source = session.document().get(slot);
             if (!source || session.role(slot) != mapedit::ObjectRole::Terrain)
                 continue;
             if (uint32_t(source->shape) >= editor::ShapeDocument::ShapeCount)
@@ -45,8 +45,8 @@ namespace idk::level
                     arena.rewind(mark);
                     return error.set("Terrain scales must have magnitude at least 0.001.");
                 }
-            const auto& geometry = session.document().geometry(*source);
-            auto& destination = candidate.terrain[next++];
+            const auto &geometry = session.document().geometry(*source);
+            auto &destination = candidate.terrain[next++];
             std::memcpy(destination.name, source->name, 48);
             destination.colour = source->color;
             destination.doubleSided = source->material.doubleSided;
@@ -84,7 +84,7 @@ namespace idk::level
         return true;
     }
 
-    bool BuildFile(const char* source, const char* destination, bool overwrite, Error& error)
+    bool BuildFile(const char *source, const char *destination, bool overwrite, Error &error)
     {
         struct stat input{}, output{};
         if (!source || !destination ||

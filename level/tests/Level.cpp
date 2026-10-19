@@ -57,12 +57,12 @@ namespace
         CHECK(level.terrain.size() == 4);
         CHECK(level.entry.rotation.y == 45);
         CHECK(level.terrain[0].vertices[0].position == glm::vec3(10, -1, -10));
-        for (const auto& object : level.terrain)
+        for (const auto &object : level.terrain)
             for (size_t i = 0; i < object.indices.size(); i += 3)
             {
-                auto& a = object.vertices[object.indices[i]];
-                auto& b = object.vertices[object.indices[i + 1]];
-                auto& c = object.vertices[object.indices[i + 2]];
+                auto &a = object.vertices[object.indices[i]];
+                auto &b = object.vertices[object.indices[i + 1]];
+                auto &c = object.vertices[object.indices[i + 2]];
                 CHECK(glm::dot(glm::cross(b.position - a.position, c.position - a.position),
                                a.normal + b.normal + c.normal) > 0);
             }
@@ -94,7 +94,7 @@ namespace
         alignas(16) std::byte small[64];
         Arena tiny(small);
         size_t mark = read.mark();
-        auto* old = result.terrain.data();
+        auto *old = result.terrain.data();
         CHECK(!Load(path, tiny, result, error));
         CHECK(tiny.mark() == 0 && result.terrain.data() == old);
         Level previous = level;
@@ -107,7 +107,7 @@ namespace
         CHECK(session.save(source) == mapedit::MapSession::SaveResult::Saved);
         CHECK(!BuildFile(source, source, true, error));
         CHECK(BuildFile(source, path, true, error));
-        FILE* file = std::fopen(path, "rb");
+        FILE *file = std::fopen(path, "rb");
         CHECK(file);
         static std::array<unsigned char, 4 * 1024 * 1024> bytes;
         size_t size = std::fread(bytes.data(), 1, bytes.size(), file);

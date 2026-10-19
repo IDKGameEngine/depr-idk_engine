@@ -13,17 +13,17 @@ namespace idk::editor
 {
     // Owns all editor GPU resources. Document geometry is borrowed for cache
     // lookup only; GPU buffers consume the vertex/index data synchronously.
-    class ScenePreview : public idk::Immobile
+    class ScenePreview: public idk::Immobile
     {
-      public:
-        bool initialize(gfx::RenderEngine&, const ShapeDocument&);
-        void shutdown(gfx::RenderEngine&);
-        void clear(gfx::RenderEngine&);
+    public:
+        bool initialize(gfx::RenderEngine &, const ShapeDocument &);
+        void shutdown(gfx::RenderEngine &);
+        void clear(gfx::RenderEngine &);
         // Builds all replacement resources before releasing the current scene.
-        bool rebuild(gfx::RenderEngine&, const ShapeDocument&, const char*& error);
-        bool submit(gfx::RenderEngine&, const ShapeDocument&, const char*& error);
+        bool rebuild(gfx::RenderEngine &, const ShapeDocument &, const char *&error);
+        bool submit(gfx::RenderEngine &, const ShapeDocument &, const char *&error);
 
-      private:
+    private:
         struct ImportedMesh
         {
             asset::Primitive geometry;
@@ -46,9 +46,9 @@ namespace idk::editor
         std::array<gfx::MeshHandle, ShapeDocument::ShapeCount> mShapes{};
         Resources mScene;
 
-        static void release(gfx::RenderEngine&, Resources&);
-        static gfx::MeshHandle findMesh(const Resources&, const asset::Primitive&);
-        void releaseUnusedMeshes(gfx::RenderEngine&, const ShapeDocument&);
-        gfx::MaterialDesc describeMaterial(const ShapeObject&) const;
+        static void release(gfx::RenderEngine &, Resources &);
+        static gfx::MeshHandle findMesh(const Resources &, const asset::Primitive &);
+        void releaseUnusedMeshes(gfx::RenderEngine &, const ShapeDocument &);
+        gfx::MaterialDesc describeMaterial(const ShapeObject &) const;
     };
 } // namespace idk::editor

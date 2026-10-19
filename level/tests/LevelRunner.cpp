@@ -58,7 +58,7 @@ namespace
         }
     };
 
-    bool checks(idk::gfx::RenderEngine& renderer, idk::EngineAPI& api)
+    bool checks(idk::gfx::RenderEngine &renderer, idk::EngineAPI &api)
     {
         using namespace idk;
         using namespace idk::level;
@@ -91,7 +91,7 @@ namespace
         CHECK(Save(level, files.b, error));
         CHECK(Save(level, files.outside, error));
         CHECK(symlink("../outside.idklvl", files.link) == 0);
-        FILE* file = std::fopen(files.bad, "wb");
+        FILE *file = std::fopen(files.bad, "wb");
         CHECK(file);
         std::fputs("bad level", file);
         std::fclose(file);
@@ -107,7 +107,7 @@ namespace
         CHECK(runner.generation() == 1);
         CHECK(!runner.loadInitial(files.b, error));
         auto initialModel = runner.model();
-        auto* initialData = runner.current().terrain.data();
+        auto *initialData = runner.current().terrain.data();
         CHECK(world.prepareTerrain(level, error));
         player.reset({0, 7, 0});
         for (int i = 0; i < 240; ++i)
@@ -142,9 +142,9 @@ namespace
             player.step({}, false, 1.0f / 60);
         CHECK(player.grounded() && std::abs(player.position().y - 5) < .05f);
         auto retained = runner.model();
-        auto* retainedData = runner.current().terrain.data();
+        auto *retainedData = runner.current().terrain.data();
         position = player.position();
-        for (const char* path : {"missing.idklvl", "bad.idklvl", "escape.idklvl"})
+        for (const char *path : {"missing.idklvl", "bad.idklvl", "escape.idklvl"})
         {
             std::snprintf(next.path, sizeof(next.path), "%s", path);
             CHECK(runner.requestTransition(next, error));
@@ -154,7 +154,7 @@ namespace
                   runner.current().terrain.data() == retainedData && player.position() == position);
             CHECK(runner.processPending(error) == LevelRunner::Transition::None);
         }
-        for (const char* path : {"/absolute.idklvl", "../outside.idklvl", "a/../outside.idklvl"})
+        for (const char *path : {"/absolute.idklvl", "../outside.idklvl", "a/../outside.idklvl"})
         {
             std::snprintf(next.path, sizeof(next.path), "%s", path);
             CHECK(!runner.requestTransition(next, error));

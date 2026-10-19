@@ -6,22 +6,22 @@
 
 namespace idk::level
 {
-    class Playtest final : public idk::Service
+    class Playtest final: public idk::Service
     {
-      public:
+    public:
         // Path is resolved by the launcher before the engine changes directory.
-        Playtest(const char* path, uint32_t frameLimit = 0, const char* levelRoot = nullptr);
-        void onInit(idk::EngineAPI&) override;
-        void onShutdown(idk::EngineAPI&) override;
-        void onUpdate(idk::EngineAPI&) override;
-        void onFixedUpdate(idk::EngineAPI&) override;
-        void onPreRender(idk::EngineAPI&) override;
+        Playtest(const char *path, uint32_t frameLimit = 0, const char *levelRoot = nullptr);
+        void onInit(idk::EngineAPI &) override;
+        void onShutdown(idk::EngineAPI &) override;
+        void onUpdate(idk::EngineAPI &) override;
+        void onFixedUpdate(idk::EngineAPI &) override;
+        void onPreRender(idk::EngineAPI &) override;
 
         bool failed() const { return mFailed; }
 
-      private:
-        const char* mPath;
-        const char* mRoot;
+    private:
+        const char *mPath;
+        const char *mRoot;
         uint32_t mFrameLimit, mFrames = 0;
         PhysicsWorld mPhysics;
         Player mPlayer;

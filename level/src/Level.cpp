@@ -20,16 +20,16 @@ namespace idk::level
 
         struct Stream
         {
-            FILE* file;
+            FILE *file;
             bool writing, ok = true;
 
-            void bytes(void* data, size_t size)
+            void bytes(void *data, size_t size)
             {
                 if (ok)
                     ok = (writing ? std::fwrite(data, 1, size, file) : std::fread(data, 1, size, file)) == size;
             }
 
-            void integer(uint32_t& value)
+            void integer(uint32_t &value)
             {
                 uint8_t data[4]{};
                 if (writing)
@@ -41,7 +41,7 @@ namespace idk::level
                             (uint32_t(data[3]) << 24);
             }
 
-            void vector(float* values, unsigned count)
+            void vector(float *values, unsigned count)
             {
                 for (unsigned i = 0; i < count; ++i)
                 {
@@ -52,14 +52,14 @@ namespace idk::level
                 }
             }
 
-            void location(Location& value)
+            void location(Location &value)
             {
                 vector(&value.position.x, 3);
                 vector(&value.rotation.x, 3);
                 vector(&value.scale.x, 3);
             }
 
-            void vertex(asset::Vertex& value)
+            void vertex(asset::Vertex &value)
             {
                 vector(&value.position.x, 3);
                 vector(&value.normal.x, 3);
@@ -69,7 +69,7 @@ namespace idk::level
             }
         };
 
-        bool finite(const float* values, unsigned count, float bound = 100000)
+        bool finite(const float *values, unsigned count, float bound = 100000)
         {
             for (unsigned i = 0; i < count; ++i)
                 if (!std::isfinite(values[i]) || std::abs(values[i]) > bound)
@@ -85,7 +85,7 @@ namespace idk::level
             return true;
         }
 
-        bool locationValid(const Location& value)
+        bool locationValid(const Location &value)
         {
             if (!finite(&value.position.x, 3) || !finite(&value.rotation.x, 3) || !finite(&value.scale.x, 3, 1000))
                 return false;
@@ -95,7 +95,7 @@ namespace idk::level
             return true;
         }
 
-        bool write(FILE* file, const Level& level)
+        bool write(FILE *file, const Level &level)
         {
             Stream stream{file, true};
             char magic[8];
@@ -109,7 +109,7 @@ namespace idk::level
             stream.location(exit);
             auto destination = level.destination;
             stream.bytes(destination.path, sizeof(destination.path));
-            for (const auto& object : level.terrain)
+            for (const auto &object : level.terrain)
             {
                 char name[48];
                 std::memcpy(name, object.name, 48);
@@ -130,7 +130,7 @@ namespace idk::level
         }
     }
 
-    bool Error::set(const char* value)
+    bool Error::set(const char *value)
     {
         std::snprintf(message, sizeof(message), "%s", value);
         return false;
@@ -145,7 +145,7 @@ namespace idk::level
         return glm::scale(result, scale);
     }
 
-    bool Level::validate(Error& error) const
+    bool Level::validate(Error &error) const
     {
         if (!destination.valid())
             return error.set(
@@ -153,14 +153,14 @@ namespace idk::level
         if (terrain.empty() || terrain.size() > MaxTerrain || !locationValid(entry) || !locationValid(exit))
             return error.set("A runtime level requires terrain and valid entry/exit transforms.");
         size_t vertices = 0, indices = 0;
-        for (const auto& object : terrain)
+        for (const auto &object : terrain)
         {
             vertices += object.vertices.size();
             indices += object.indices.size();
             if (!std::memchr(object.name, 0, 48) || !colour(object.colour) || object.vertices.empty() ||
                 object.indices.empty() || object.indices.size() % 3 || vertices > MaxVertices || indices > MaxIndices)
                 return error.set("Invalid terrain name, colour, geometry counts, or level capacity.");
-            for (const auto& v : object.vertices)
+            for (const auto &v : object.vertices)
                 if (!finite(&v.position.x, 3) || !finite(&v.normal.x, 3) || !finite(&v.uv.x, 2) ||
                     !finite(&v.tangent.x, 4) || !colour(v.color) || std::abs(glm::length(v.normal) - 1) > .01f ||
                     std::abs(glm::length(glm::vec3(v.tangent)) - 1) > .01f || std::abs(v.tangent.w) != 1)
@@ -181,7 +181,7 @@ namespace idk::level
         return true;
     }
 
-    bool Level::model(idk::Arena& arena, asset::Model& output, Error& error) const
+    bool Level::model(idk::Arena &arena, asset::Model &output, Error &error) const
     {
         if (!validate(error))
             return false;
@@ -198,7 +198,7 @@ namespace idk::level
         }
         for (size_t i = 0; i < terrain.size(); ++i)
         {
-            const auto& object = terrain[i];
+            const auto &object = terrain[i];
             candidate.primitives[i] = {object.name, object.vertices, object.indices, uint32_t(i), true};
             candidate.materials[i].baseColor = object.colour;
             candidate.materials[i].doubleSided = object.doubleSided;
@@ -238,9 +238,9 @@ namespace idk::level
         return true;
     }
 
-    bool Load(const char* path, idk::Arena& arena, Level& output, Error& error)
+    bool Load(const char *path, idk::Arena &arena, Level &output, Error &error)
     {
-        FILE* file = path && *path ? std::fopen(path, "rb") : nullptr;
+        FILE *file = path && *path ? std::fopen(path, "rb") : nullptr;
         if (!file)
             return error.set("Could not open runtime level.");
         size_t mark = arena.mark();
@@ -265,7 +265,7 @@ namespace idk::level
         uint32_t totalVertices = 0, totalIndices = 0;
         for (uint32_t i = 0; ok && i < count; ++i)
         {
-            auto& object = candidate.terrain[i];
+            auto &object = candidate.terrain[i];
             stream.bytes(object.name, 48);
             stream.vector(&object.colour.x, 4);
             uint32_t flags = 0, vertices = 0, indices = 0;
@@ -284,9 +284,9 @@ namespace idk::level
             ok = !arena.failed();
             if (!ok)
                 break;
-            for (auto& vertex : object.vertices)
+            for (auto &vertex : object.vertices)
                 stream.vertex(vertex);
-            for (auto& index : object.indices)
+            for (auto &index : object.indices)
                 stream.integer(index);
             ok = stream.ok;
         }
@@ -307,7 +307,7 @@ namespace idk::level
         return true;
     }
 
-    bool Save(const Level& level, const char* path, Error& error, bool overwrite)
+    bool Save(const Level &level, const char *path, Error &error, bool overwrite)
     {
         if (!level.validate(error))
             return false;
@@ -318,7 +318,7 @@ namespace idk::level
         if (length < 0 || size_t(length) >= sizeof(temporary))
             return error.set("Runtime level path is too long.");
         int descriptor = mkstemp(temporary);
-        FILE* file = descriptor >= 0 ? fdopen(descriptor, "wb") : nullptr;
+        FILE *file = descriptor >= 0 ? fdopen(descriptor, "wb") : nullptr;
         bool ok = file != nullptr;
         if (file)
         {

@@ -18,7 +18,7 @@ namespace idk::editor
         mCamera.dragButton = -1;
     }
 
-    void EditorViewport::focus(const ShapeDocument& document, uint32_t slot)
+    void EditorViewport::focus(const ShapeDocument &document, uint32_t slot)
     {
         glm::vec3 minimum, maximum;
         if (document.bounds(minimum, maximum, slot))
@@ -30,20 +30,20 @@ namespace idk::editor
             resetCamera();
     }
 
-    void EditorViewport::focusSelection(const ShapeSession& session)
+    void EditorViewport::focusSelection(const ShapeSession &session)
     {
         focus(session.document(), session.selection());
     }
 
-    void EditorViewport::frameAll(const ShapeDocument& document)
+    void EditorViewport::frameAll(const ShapeDocument &document)
     {
         focus(document, asset::NoIndex);
         mCamera.dragButton = -1;
     }
 
-    gfx::Camera EditorViewport::navigate(const Canvas& canvas)
+    gfx::Camera EditorViewport::navigate(const Canvas &canvas)
     {
-        const auto& io = ImGui::GetIO();
+        const auto &io = ImGui::GetIO();
         if (mCamera.dragButton >= 0 && !ImGui::IsMouseDown(mCamera.dragButton))
             mCamera.dragButton = -1;
         if (canvas.hovered && !ImGuizmo::IsUsing())
@@ -82,12 +82,12 @@ namespace idk::editor
         return camera;
     }
 
-    void EditorViewport::configureViewport(gfx::RenderEngine& renderer, const Canvas& canvas)
+    void EditorViewport::configureViewport(gfx::RenderEngine &renderer, const Canvas &canvas)
     {
-        const auto& io = ImGui::GetIO();
+        const auto &io = ImGui::GetIO();
         const ImVec2 display = ImGui::GetMainViewport()->Pos;
         int drawableHeight = 0;
-        SDL_GetWindowSizeInPixels(static_cast<SDL_Window*>(renderer.GetWindowHandle()), nullptr, &drawableHeight);
+        SDL_GetWindowSizeInPixels(static_cast<SDL_Window *>(renderer.GetWindowHandle()), nullptr, &drawableHeight);
         renderer.SetViewport(
             int((canvas.origin.x - display.x) * io.DisplayFramebufferScale.x),
             drawableHeight - int((canvas.origin.y - display.y + canvas.size.y) * io.DisplayFramebufferScale.y),
@@ -97,9 +97,9 @@ namespace idk::editor
         ImGuizmo::SetOrthographic(false);
     }
 
-    void EditorViewport::handleShortcuts(ShapeSession& session)
+    void EditorViewport::handleShortcuts(ShapeSession &session)
     {
-        const auto& io = ImGui::GetIO();
+        const auto &io = ImGui::GetIO();
         if (io.WantTextInput || ImGui::IsAnyItemActive())
             return;
         if (ImGui::IsKeyPressed(ImGuiKey_W))
@@ -116,9 +116,9 @@ namespace idk::editor
             session.deleteSelection();
     }
 
-    void EditorViewport::manipulate(ShapeSession& session, const gfx::Camera& camera)
+    void EditorViewport::manipulate(ShapeSession &session, const gfx::Camera &camera)
     {
-        auto* object = session.selected();
+        auto *object = session.selected();
         if (!object)
             return;
         ImGuizmo::OPERATION operation = ImGuizmo::TRANSLATE;
@@ -146,12 +146,12 @@ namespace idk::editor
             session.setStatus("Transform must have nonzero scale and no shear.");
     }
 
-    void EditorViewport::pick(ShapeSession& session, const Canvas& canvas, const gfx::Camera& camera)
+    void EditorViewport::pick(ShapeSession &session, const Canvas &canvas, const gfx::Camera &camera)
     {
         if (!canvas.hovered || !ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGuizmo::IsOver() ||
             ImGuizmo::IsUsing())
             return;
-        const auto& io = ImGui::GetIO();
+        const auto &io = ImGui::GetIO();
         float x = 2 * (io.MousePos.x - canvas.origin.x) / canvas.size.x - 1;
         float y = 1 - 2 * (io.MousePos.y - canvas.origin.y) / canvas.size.y;
         auto inverse = glm::inverse(camera.proj * camera.view);
@@ -162,7 +162,7 @@ namespace idk::editor
         session.select(session.document().pick(start, glm::normalize(end - start)));
     }
 
-    void EditorViewport::draw(ShapeSession& session, gfx::RenderEngine& renderer, const char* title, bool grid)
+    void EditorViewport::draw(ShapeSession &session, gfx::RenderEngine &renderer, const char *title, bool grid)
     {
         const ImVec2 origin = ImGui::GetCursorScreenPos();
         const ImVec2 size = ImGui::GetContentRegionAvail();
@@ -173,7 +173,7 @@ namespace idk::editor
         }
         // An interactive item here would capture clicks before ImGuizmo.
         ImGui::Dummy(size);
-        const auto& io = ImGui::GetIO();
+        const auto &io = ImGui::GetIO();
         Canvas canvas{{origin.x, origin.y},
                       {size.x, size.y},
                       ImGui::IsWindowHovered() && io.MousePos.x >= origin.x && io.MousePos.y >= origin.y &&
@@ -193,9 +193,9 @@ namespace idk::editor
         manipulate(session, camera);
         pick(session, canvas, camera);
 
-        auto* draw = ImGui::GetWindowDrawList();
+        auto *draw = ImGui::GetWindowDrawList();
         draw->AddText(ImVec2(origin.x + 12, origin.y + 10), IM_COL32(190, 200, 220, 255), title);
-        if (const auto* object = session.selected())
+        if (const auto *object = session.selected())
             draw->AddText(ImVec2(origin.x + 12, origin.y + 12 + ImGui::GetTextLineHeight()),
                           IM_COL32(255, 210, 90, 255), object->name);
     }

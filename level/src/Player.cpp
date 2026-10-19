@@ -17,23 +17,23 @@ namespace idk::level
 {
     namespace
     {
-        class Layers final : public JPH::BroadPhaseLayerInterface
+        class Layers final: public JPH::BroadPhaseLayerInterface
         {
-          public:
+        public:
             JPH::uint GetNumBroadPhaseLayers() const override { return 1; }
 
             JPH::BroadPhaseLayer GetBroadPhaseLayer(JPH::ObjectLayer) const override { return JPH::BroadPhaseLayer(0); }
 #if defined(JPH_EXTERNAL_PROFILE) || defined(JPH_PROFILE_ENABLED)
-            const char* GetBroadPhaseLayerName(JPH::BroadPhaseLayer) const override { return "Terrain"; }
+            const char *GetBroadPhaseLayerName(JPH::BroadPhaseLayer) const override { return "Terrain"; }
 #endif
         };
 
-        class BroadFilter final : public JPH::ObjectVsBroadPhaseLayerFilter
+        class BroadFilter final: public JPH::ObjectVsBroadPhaseLayerFilter
         {
             bool ShouldCollide(JPH::ObjectLayer, JPH::BroadPhaseLayer) const override { return true; }
         };
 
-        class PairFilter final : public JPH::ObjectLayerPairFilter
+        class PairFilter final: public JPH::ObjectLayerPairFilter
         {
             bool ShouldCollide(JPH::ObjectLayer, JPH::ObjectLayer) const override { return true; }
         };
@@ -56,12 +56,12 @@ namespace idk::level
 
         ~Impl()
         {
-            auto& bodies = system.GetBodyInterface();
+            auto &bodies = system.GetBodyInterface();
             if (!candidate.IsInvalid())
                 bodies.DestroyBody(candidate);
             if (!terrain.IsInvalid())
             {
-                auto& bodies = system.GetBodyInterface();
+                auto &bodies = system.GetBodyInterface();
                 bodies.RemoveBody(terrain);
                 bodies.DestroyBody(terrain);
             }
@@ -70,7 +70,7 @@ namespace idk::level
 
     struct Player::Impl
     {
-        PhysicsWorld* world;
+        PhysicsWorld *world;
         JPH::Ref<JPH::CharacterVirtual> character;
     };
 
@@ -79,7 +79,7 @@ namespace idk::level
         shutdown();
     }
 
-    bool PhysicsWorld::initialize(Error& error)
+    bool PhysicsWorld::initialize(Error &error)
     {
         if (mImpl)
             return error.set("Physics world is already initialized.");
@@ -99,7 +99,7 @@ namespace idk::level
         return true;
     }
 
-    bool PhysicsWorld::prepareTerrain(const Level& level, Error& error)
+    bool PhysicsWorld::prepareTerrain(const Level &level, Error &error)
     {
         if (!mImpl)
             return error.set("Physics world is not initialized.");
@@ -109,10 +109,10 @@ namespace idk::level
             return false;
         JPH::TriangleList triangles;
         size_t count = 0;
-        for (const auto& object : level.terrain)
+        for (const auto &object : level.terrain)
             count += object.indices.size() / 3;
         triangles.reserve(count);
-        for (const auto& object : level.terrain)
+        for (const auto &object : level.terrain)
             for (size_t i = 0; i < object.indices.size(); i += 3)
                 triangles.emplace_back(vector(object.vertices[object.indices[i]].position),
                                        vector(object.vertices[object.indices[i + 1]].position),
@@ -120,7 +120,7 @@ namespace idk::level
         auto mesh = JPH::MeshShapeSettings(triangles).Create();
         if (mesh.HasError())
             return error.set(mesh.GetError().c_str());
-        auto* body = mImpl->system.GetBodyInterface().CreateBody(JPH::BodyCreationSettings(
+        auto *body = mImpl->system.GetBodyInterface().CreateBody(JPH::BodyCreationSettings(
             mesh.Get(), JPH::RVec3::sZero(), JPH::Quat::sIdentity(), JPH::EMotionType::Static, 0));
         if (!body)
             return error.set("Could not prepare terrain collision body.");
@@ -141,7 +141,7 @@ namespace idk::level
     {
         if (!mImpl || mImpl->candidate.IsInvalid())
             return;
-        auto& bodies = mImpl->system.GetBodyInterface();
+        auto &bodies = mImpl->system.GetBodyInterface();
         if (!mImpl->terrain.IsInvalid())
         {
             bodies.RemoveBody(mImpl->terrain);
@@ -158,7 +158,7 @@ namespace idk::level
         discardTerrain();
         if (mImpl && !mImpl->terrain.IsInvalid())
         {
-            auto& bodies = mImpl->system.GetBodyInterface();
+            auto &bodies = mImpl->system.GetBodyInterface();
             bodies.RemoveBody(mImpl->terrain);
             bodies.DestroyBody(mImpl->terrain);
             mImpl->terrain = JPH::BodyID();
@@ -183,7 +183,7 @@ namespace idk::level
         shutdown();
     }
 
-    bool Player::initialize(PhysicsWorld& world, Error& error)
+    bool Player::initialize(PhysicsWorld &world, Error &error)
     {
         if (mImpl || !world.mImpl)
             return error.set("Player requires an initialized physics world.");
@@ -232,7 +232,7 @@ namespace idk::level
         if (!mImpl || !mImpl->character || !std::isfinite(dt) || dt <= 0)
             return;
         dt = std::min(dt, 1.0f / 30);
-        auto& character = *mImpl->character;
+        auto &character = *mImpl->character;
         float vertical = character.GetLinearVelocity().GetY();
         if (grounded() && vertical <= .1f)
             vertical = jump ? 5.0f : 0;

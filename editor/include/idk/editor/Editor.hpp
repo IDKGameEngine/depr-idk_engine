@@ -9,23 +9,23 @@
 namespace idk::editor
 {
     // Engine lifecycle and command coordination. Components own their own state.
-    class EditorApplication final : public idk::Service
+    class EditorApplication final: public idk::Service
     {
-      public:
-        void onInit(idk::EngineAPI&) override;
-        void onShutdown(idk::EngineAPI&) override;
-        void onPreRender(idk::EngineAPI&) override;
-        void onMidRender(idk::EngineAPI&) override;
+    public:
+        void onInit(idk::EngineAPI &) override;
+        void onShutdown(idk::EngineAPI &) override;
+        void onPreRender(idk::EngineAPI &) override;
+        void onMidRender(idk::EngineAPI &) override;
 
-      private:
+    private:
         bool mInitialized = false;
         EditorSession mSession;
         ScenePreview mPreview;
         EditorViewport mViewport;
         EditorUI mUI;
 
-        void execute(const EditorAction&, gfx::RenderEngine&);
-        void importModel(const EditorAction&, gfx::RenderEngine&);
-        static void onGenericEventCallback(idk::EngineAPI&, const void*);
+        void execute(const EditorAction &, gfx::RenderEngine &);
+        void importModel(const EditorAction &, gfx::RenderEngine &);
+        static void onGenericEventCallback(idk::EngineAPI &, const void *);
     };
 } // namespace idk::editor

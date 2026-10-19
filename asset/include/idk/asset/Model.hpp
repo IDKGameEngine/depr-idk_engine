@@ -37,24 +37,49 @@ namespace idk::asset
         std::span<uint8_t> rgba;
     };
 
-    enum class Wrap { Repeat, ClampToEdge, MirroredRepeat };
-    enum class Filter { Nearest, Linear };
-    enum class MinFilter { Nearest, Linear, NearestMipmapNearest, LinearMipmapNearest, NearestMipmapLinear, LinearMipmapLinear };
+    enum class Wrap
+    {
+        Repeat,
+        ClampToEdge,
+        MirroredRepeat
+    };
+    enum class Filter
+    {
+        Nearest,
+        Linear
+    };
+    enum class MinFilter
+    {
+        Nearest,
+        Linear,
+        NearestMipmapNearest,
+        LinearMipmapNearest,
+        NearestMipmapLinear,
+        LinearMipmapLinear
+    };
+
     struct Sampler
     {
         Wrap wrapS = Wrap::Repeat, wrapT = Wrap::Repeat;
         Filter mag = Filter::Linear;
         MinFilter min = MinFilter::LinearMipmapLinear;
-        bool operator==(const Sampler&) const = default;
+        bool operator==(const Sampler &) const = default;
     };
+
     struct Texture
     {
         uint32_t image = NoIndex;
         uint32_t sampler = NoIndex;
-        bool operator==(const Texture&) const = default;
+        bool operator==(const Texture &) const = default;
     };
 
-    enum class AlphaMode { Opaque, Mask, Blend };
+    enum class AlphaMode
+    {
+        Opaque,
+        Mask,
+        Blend
+    };
+
     struct Material
     {
         std::string_view name;

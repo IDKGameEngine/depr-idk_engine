@@ -12,7 +12,7 @@ namespace idk::mapedit
     namespace
     {
         // Each record has fixed fields and bounded lines; no parser allocation.
-        bool readLine(FILE* file, char (&line)[512])
+        bool readLine(FILE *file, char (&line)[512])
         {
             if (!std::fgets(line, sizeof(line), file))
                 return false;
@@ -25,7 +25,7 @@ namespace idk::mapedit
             return true;
         }
 
-        bool readVector(FILE* file, const char* field, float* values, unsigned count)
+        bool readVector(FILE *file, const char *field, float *values, unsigned count)
         {
             char line[512];
             if (!readLine(file, line))
@@ -33,8 +33,8 @@ namespace idk::mapedit
             size_t length = std::strlen(field);
             if (std::strncmp(line, field, length) || line[length] != ' ')
                 return false;
-            const char* cursor = line + length + 1;
-            const char* limit = line + std::strlen(line);
+            const char *cursor = line + length + 1;
+            const char *limit = line + std::strlen(line);
             for (unsigned i = 0; i < count; ++i)
             {
                 auto result = std::from_chars(cursor, limit, values[i]);
@@ -47,7 +47,7 @@ namespace idk::mapedit
             return cursor == limit;
         }
 
-        bool readUnsignedFields(FILE* file, const char* field, std::span<uint32_t> values)
+        bool readUnsignedFields(FILE *file, const char *field, std::span<uint32_t> values)
         {
             char line[512];
             if (!readLine(file, line))
@@ -55,8 +55,8 @@ namespace idk::mapedit
             size_t length = std::strlen(field);
             if (std::strncmp(line, field, length) || line[length] != ' ')
                 return false;
-            const char* cursor = line + length + 1;
-            const char* limit = line + std::strlen(line);
+            const char *cursor = line + length + 1;
+            const char *limit = line + std::strlen(line);
             for (size_t i = 0; i < values.size(); ++i)
             {
                 auto result = std::from_chars(cursor, limit, values[i]);
@@ -69,7 +69,7 @@ namespace idk::mapedit
             return cursor == limit;
         }
 
-        bool readMap(FILE* file, MapSession& candidate)
+        bool readMap(FILE *file, MapSession &candidate)
         {
             char line[512];
             if (!readLine(file, line))
@@ -111,7 +111,7 @@ namespace idk::mapedit
                         return false;
                     candidate.placeMarker(type);
                 }
-                auto* object = candidate.selected();
+                auto *object = candidate.selected();
                 if (!object || object->shape != shape)
                     return false;
                 if (!readLine(file, line) || std::strncmp(line, "name ", 5) ||
@@ -126,14 +126,14 @@ namespace idk::mapedit
             return std::fgetc(file) == EOF && !std::ferror(file);
         }
 
-        bool writeMap(FILE* file, const MapSession& session)
+        bool writeMap(FILE *file, const MapSession &session)
         {
             if (std::fprintf(file, "IDKMAP 2\ndestination%s%s\nobjects %u\n", session.destination().path[0] ? " " : "",
                              session.destination().path, session.document().count()) < 0)
                 return false;
             for (uint32_t i = 0; i < editor::ShapeDocument::Capacity; ++i)
             {
-                const auto* object = session.document().get(i);
+                const auto *object = session.document().get(i);
                 if (!object)
                     continue;
                 if (std::fprintf(file,
@@ -152,7 +152,7 @@ namespace idk::mapedit
         }
     } // namespace
 
-    const char* RoleName(ObjectRole role)
+    const char *RoleName(ObjectRole role)
     {
         switch (role)
         {
@@ -166,7 +166,7 @@ namespace idk::mapedit
         return "Unknown";
     }
 
-    bool MapSession::initialize(idk::Arena& geometry)
+    bool MapSession::initialize(idk::Arena &geometry)
     {
         if (!mDocument.initialize(geometry))
         {
@@ -209,7 +209,7 @@ namespace idk::mapedit
             setStatus("The map is full. Delete an object to place a marker.");
             return;
         }
-        auto& object = *mDocument.get(slot);
+        auto &object = *mDocument.get(slot);
         object.position.x = type == ObjectRole::Entry ? -1.5f : 1.5f;
         object.scale = {.5f, 1, .5f};
         object.color = type == ObjectRole::Entry ? glm::vec4(.15f, .9f, .4f, 1) : glm::vec4(1, .45f, .1f, 1);
@@ -254,7 +254,7 @@ namespace idk::mapedit
             return false;
         for (uint32_t i = 0; i < editor::ShapeDocument::Capacity; ++i)
         {
-            const auto* object = mDocument.get(i);
+            const auto *object = mDocument.get(i);
             if (!object)
                 continue;
             if (uint32_t(object->shape) >= editor::ShapeDocument::ShapeCount ||
@@ -271,14 +271,14 @@ namespace idk::mapedit
         return true;
     }
 
-    bool MapSession::load(const char* path)
+    bool MapSession::load(const char *path)
     {
         if (!path || !*path)
         {
             setStatus("Enter a map path to open.");
             return false;
         }
-        FILE* file = std::fopen(path, "rb");
+        FILE *file = std::fopen(path, "rb");
         if (!file)
         {
             std::snprintf(mStatus, sizeof(mStatus), "Open failed: %s", std::strerror(errno));
@@ -299,7 +299,7 @@ namespace idk::mapedit
         return true;
     }
 
-    MapSession::SaveResult MapSession::save(const char* path, bool overwrite)
+    MapSession::SaveResult MapSession::save(const char *path, bool overwrite)
     {
         if (!path || !*path || !validate())
         {
@@ -315,7 +315,7 @@ namespace idk::mapedit
             return SaveResult::Failed;
         }
         int descriptor = mkstemp(temporary);
-        FILE* file = descriptor >= 0 ? fdopen(descriptor, "wb") : nullptr;
+        FILE *file = descriptor >= 0 ? fdopen(descriptor, "wb") : nullptr;
         bool ok = file != nullptr;
         if (file)
         {

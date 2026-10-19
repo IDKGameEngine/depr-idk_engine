@@ -21,36 +21,36 @@ namespace idk::editor
 
         glm::mat4 transform() const;
         // Accepts affine TRS matrices, including reflections; rejects shear/zero scale.
-        bool setTransform(const glm::mat4&);
+        bool setTransform(const glm::mat4 &);
     };
 
     // Stable slots, bounded geometry, no owning heap storage. Geometry lives in
     // the caller's arena; snapshots also borrow names/geometry from the document.
     class ShapeDocument
     {
-      public:
+    public:
         static constexpr uint32_t Capacity = 64;
         static constexpr uint32_t ShapeCount = uint32_t(asset::ShapeKind::Count);
         static constexpr uint32_t MaxImportNodes = 512;
-        bool initialize(idk::Arena& geometry);
+        bool initialize(idk::Arena &geometry);
         uint32_t add(asset::ShapeKind);
         uint32_t duplicate(uint32_t);
         bool remove(uint32_t);
         void clear();
         uint32_t count() const;
-        ShapeObject* get(uint32_t);
-        const ShapeObject* get(uint32_t) const;
-        const asset::Primitive& geometry(asset::ShapeKind kind) const;
-        const asset::Primitive& geometry(const ShapeObject&) const;
+        ShapeObject *get(uint32_t);
+        const ShapeObject *get(uint32_t) const;
+        const asset::Primitive &geometry(asset::ShapeKind kind) const;
+        const asset::Primitive &geometry(const ShapeObject &) const;
         // Transactional deep copy into a separate arena. Retained imported meshes
         // are compacted too; successful replacement releases all old references.
         // The destination must not overlap the source or existing document data.
-        bool importModel(const asset::Model&, idk::Arena& destination, asset::ImportError&, bool replace = false);
-        bool snapshot(idk::Arena&, asset::Model&) const;
+        bool importModel(const asset::Model &, idk::Arena &destination, asset::ImportError &, bool replace = false);
+        bool snapshot(idk::Arena &, asset::Model &) const;
         uint32_t pick(glm::vec3 origin, glm::vec3 direction) const;
-        bool bounds(glm::vec3& minimum, glm::vec3& maximum, uint32_t slot = asset::NoIndex) const;
+        bool bounds(glm::vec3 &minimum, glm::vec3 &maximum, uint32_t slot = asset::NoIndex) const;
 
-      private:
+    private:
         std::array<ShapeObject, Capacity> mObjects{};
         std::array<asset::Primitive, ShapeCount> mGeometry{};
         uint32_t mSerial = 0;

@@ -9,14 +9,14 @@
 
 namespace idk::level
 {
-    Playtest::Playtest(const char* path, uint32_t frameLimit, const char* levelRoot)
+    Playtest::Playtest(const char *path, uint32_t frameLimit, const char *levelRoot)
         : mPath(path), mRoot(levelRoot), mFrameLimit(frameLimit)
     {
     }
 
-    void Playtest::onInit(EngineAPI& api)
+    void Playtest::onInit(EngineAPI &api)
     {
-        auto* renderer = api.getService<gfx::RenderEngine>();
+        auto *renderer = api.getService<gfx::RenderEngine>();
         if (!renderer || !renderer->IsInitialized())
         {
             mFailed = true;
@@ -64,7 +64,7 @@ namespace idk::level
         }
         renderer->SetClearColor({.075f, .085f, .105f, 1});
         restart();
-        auto* window = static_cast<SDL_Window*>(renderer->GetWindowHandle());
+        auto *window = static_cast<SDL_Window *>(renderer->GetWindowHandle());
         SDL_SetWindowTitle(window,
                            "Playtest - click to look | WASD move | Space jump | R restart | Tab cursor | Esc close");
         SDL_Log("Playtest loaded %zu terrain objects at entry %.3f %.3f %.3f", mRunner.current().terrain.size(),
@@ -72,14 +72,14 @@ namespace idk::level
                 mRunner.current().entry.position.z);
     }
 
-    void Playtest::onShutdown(EngineAPI& api)
+    void Playtest::onShutdown(EngineAPI &api)
     {
         mPlayer.shutdown();
         mRunner.shutdown();
         mPhysics.shutdown();
-        if (auto* renderer = api.getService<gfx::RenderEngine>())
+        if (auto *renderer = api.getService<gfx::RenderEngine>())
         {
-            SDL_SetWindowRelativeMouseMode(static_cast<SDL_Window*>(renderer->GetWindowHandle()), false);
+            SDL_SetWindowRelativeMouseMode(static_cast<SDL_Window *>(renderer->GetWindowHandle()), false);
             renderer->DestroyMesh(mExitMesh);
             renderer->DestroyMaterial(mExitMaterial);
         }
@@ -91,8 +91,8 @@ namespace idk::level
         mYaw = mRunner.current().entry.rotation.y;
         mPitch = std::clamp(mRunner.current().entry.rotation.x, -85.0f, 85.0f);
         float minimum = mRunner.current().entry.position.y;
-        for (const auto& object : mRunner.current().terrain)
-            for (const auto& vertex : object.vertices)
+        for (const auto &object : mRunner.current().terrain)
+            for (const auto &vertex : object.vertices)
                 minimum = std::min(minimum, vertex.position.y);
         mFallLimit = minimum - 50;
         mReached = mRunner.current().atExit(mPlayer.position());
@@ -100,13 +100,13 @@ namespace idk::level
         mJump = false;
     }
 
-    void Playtest::onUpdate(EngineAPI& api)
+    void Playtest::onUpdate(EngineAPI &api)
     {
         if (mFailed)
             return;
-        auto& renderer = *api.getService<gfx::RenderEngine>();
-        auto* window = static_cast<SDL_Window*>(renderer.GetWindowHandle());
-        const bool* keys = SDL_GetKeyboardState(nullptr);
+        auto &renderer = *api.getService<gfx::RenderEngine>();
+        auto *window = static_cast<SDL_Window *>(renderer.GetWindowHandle());
+        const bool *keys = SDL_GetKeyboardState(nullptr);
         bool focused = (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0;
         if (focused && keys[SDL_SCANCODE_ESCAPE])
             api.quit();
@@ -149,7 +149,7 @@ namespace idk::level
         }
     }
 
-    void Playtest::onFixedUpdate(EngineAPI& api)
+    void Playtest::onFixedUpdate(EngineAPI &api)
     {
         if (mFailed)
             return;
@@ -163,8 +163,8 @@ namespace idk::level
         if (!mReached && inside)
         {
             mReached = true;
-            auto* window = static_cast<SDL_Window*>(api.getService<gfx::RenderEngine>()->GetWindowHandle());
-            const auto& destination = mRunner.current().destination;
+            auto *window = static_cast<SDL_Window *>(api.getService<gfx::RenderEngine>()->GetWindowHandle());
+            const auto &destination = mRunner.current().destination;
             if (!destination.path[0])
             {
                 SDL_SetWindowTitle(window, "Exit reached! - R restart | Esc return to editor");
@@ -179,28 +179,28 @@ namespace idk::level
         }
     }
 
-    void Playtest::onPreRender(EngineAPI& api)
+    void Playtest::onPreRender(EngineAPI &api)
     {
         if (mFailed)
             return;
-        auto& renderer = *api.getService<gfx::RenderEngine>();
+        auto &renderer = *api.getService<gfx::RenderEngine>();
         Error error;
         auto transition = mRunner.processPending(error);
         if (transition == LevelRunner::Transition::Changed)
         {
             restart();
-            SDL_SetWindowTitle(static_cast<SDL_Window*>(renderer.GetWindowHandle()),
+            SDL_SetWindowTitle(static_cast<SDL_Window *>(renderer.GetWindowHandle()),
                                "Playtest - new level | WASD move | R restart | Esc close");
             SDL_Log("Level transition committed: %s", mRunner.currentPath());
         }
         else if (transition == LevelRunner::Transition::Failed)
         {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Level transition failed: %s", error.message);
-            SDL_SetWindowTitle(static_cast<SDL_Window*>(renderer.GetWindowHandle()),
+            SDL_SetWindowTitle(static_cast<SDL_Window *>(renderer.GetWindowHandle()),
                                "Transition failed - current level retained | Leave and re-enter exit to retry");
         }
         int width = 0, height = 0;
-        SDL_GetWindowSizeInPixels(static_cast<SDL_Window*>(renderer.GetWindowHandle()), &width, &height);
+        SDL_GetWindowSizeInPixels(static_cast<SDL_Window *>(renderer.GetWindowHandle()), &width, &height);
         if (width > 0 && height > 0)
         {
             float yaw = glm::radians(mYaw), pitch = glm::radians(mPitch);

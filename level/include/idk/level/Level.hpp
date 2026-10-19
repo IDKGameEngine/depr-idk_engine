@@ -9,7 +9,7 @@ namespace idk::level
     struct Error
     {
         char message[640]{};
-        bool set(const char*);
+        bool set(const char *);
     };
 
     struct Location
@@ -37,13 +37,13 @@ namespace idk::level
         asset::ExitDestination destination;
         std::span<Terrain> terrain;
 
-        bool validate(Error&) const;
-        bool model(idk::Arena&, asset::Model&, Error&) const;
+        bool validate(Error &) const;
+        bool model(idk::Arena &, asset::Model &, Error &) const;
         bool atExit(glm::vec3 feet) const;
     };
 
     // No native struct dumps: explicit little-endian IEEE float32 fields.
     // Failed loads rewind the arena and leave the caller's Level unchanged.
-    bool Load(const char* path, idk::Arena&, Level&, Error&);
-    bool Save(const Level&, const char* path, Error&, bool overwrite = false);
+    bool Load(const char *path, idk::Arena &, Level &, Error &);
+    bool Save(const Level &, const char *path, Error &, bool overwrite = false);
 } // namespace idk::level

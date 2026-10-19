@@ -51,14 +51,14 @@ namespace
 
     int glErrors = 0;
 
-    void APIENTRY debugCallback(GLenum, GLenum type, GLuint, GLenum, GLsizei, const GLchar*, const void*)
+    void APIENTRY debugCallback(GLenum, GLenum type, GLuint, GLenum, GLsizei, const GLchar *, const void *)
     {
         if (type == GL_DEBUG_TYPE_ERROR)
             ++glErrors;
     }
 } // namespace
 
-bool checks(idk::gfx::RenderEngine& renderer, idk::EngineAPI& api)
+bool checks(idk::gfx::RenderEngine &renderer, idk::EngineAPI &api)
 {
     using namespace idk::editor;
     glDebugMessageCallback(debugCallback, nullptr);
@@ -69,7 +69,7 @@ bool checks(idk::gfx::RenderEngine& renderer, idk::EngineAPI& api)
     CHECK(preview.initialize(renderer, session.document()), "Preview initialization failed");
     renderer.SetCamera({});
     renderer.SetClearColor({0, 0, 0, 1});
-    const char* error = nullptr;
+    const char *error = nullptr;
 
     session.addShape(idk::asset::ShapeKind::Box);
     session.selected()->position = {0, 0, 0};

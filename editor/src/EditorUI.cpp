@@ -23,7 +23,7 @@ namespace idk::editor
         mImport.awaitingFile = false;
     }
 
-    void EditorUI::chooseImportFile(SDL_Window* parent)
+    void EditorUI::chooseImportFile(SDL_Window *parent)
     {
         mImport.awaitingFile = importFileDialog.show(parent, mImport.path);
     }
@@ -50,13 +50,13 @@ namespace idk::editor
         }
     }
 
-    void EditorUI::showImportError(const char* error)
+    void EditorUI::showImportError(const char *error)
     {
         std::snprintf(mImport.error, sizeof(mImport.error), "Import failed: %s", error);
         mImport.open = true;
     }
 
-    void EditorUI::confirmOverwrite(const char* path)
+    void EditorUI::confirmOverwrite(const char *path)
     {
         std::snprintf(mExport.overwritePath, sizeof(mExport.overwritePath), "%s", path);
         mExport.confirmOverwrite = true;
@@ -77,7 +77,7 @@ namespace idk::editor
             ImGui::OpenPopup("Clear model?");
     }
 
-    void EditorUI::drawShapes(EditorSession& session)
+    void EditorUI::drawShapes(EditorSession &session)
     {
         ImGui::TextUnformatted("ADD SHAPE");
         for (uint32_t i = 0; i < ShapeDocument::ShapeCount; ++i)
@@ -91,7 +91,7 @@ namespace idk::editor
         }
     }
 
-    void EditorUI::drawObjectList(EditorSession& session, EditorViewport& viewport)
+    void EditorUI::drawObjectList(EditorSession &session, EditorViewport &viewport)
     {
         ImGui::Separator();
         ImGui::Text("Objects (%u / %u)", session.document().count(), ShapeDocument::Capacity);
@@ -99,7 +99,7 @@ namespace idk::editor
         {
             for (uint32_t i = 0; i < ShapeDocument::Capacity; ++i)
             {
-                const auto* object = session.document().get(i);
+                const auto *object = session.document().get(i);
                 if (!object)
                     continue;
                 ImGui::PushID(int(i));
@@ -121,7 +121,7 @@ namespace idk::editor
         ImGui::EndDisabled();
     }
 
-    void EditorUI::drawInspector(ShapeObject& object)
+    void EditorUI::drawInspector(ShapeObject &object)
     {
         ImGui::SeparatorText("Selected object");
         ImGui::InputText("Name", object.name, sizeof(object.name));
@@ -147,9 +147,9 @@ namespace idk::editor
             ImGui::SliderFloat("Cutoff", &object.material.alphaCutoff, 0, 1);
     }
 
-    void EditorUI::drawTransformTools(EditorViewport& viewport)
+    void EditorUI::drawTransformTools(EditorViewport &viewport)
     {
-        auto& tools = viewport.tools();
+        auto &tools = viewport.tools();
         ImGui::SeparatorText("Transform gizmo");
         if (ImGui::RadioButton("Move", tools.tool == TransformTool::Move))
             tools.tool = TransformTool::Move;
@@ -169,7 +169,7 @@ namespace idk::editor
         }
     }
 
-    void EditorUI::drawExport(const EditorSession& session)
+    void EditorUI::drawExport(const EditorSession &session)
     {
         ImGui::SeparatorText("Export model");
         ImGui::TextWrapped("GLB retains each mesh, transform, name and material.");
@@ -187,11 +187,11 @@ namespace idk::editor
             ImGui::TextWrapped("%s", session.status());
     }
 
-    void EditorUI::drawTools(EditorSession& session, EditorViewport& viewport)
+    void EditorUI::drawTools(EditorSession &session, EditorViewport &viewport)
     {
         drawShapes(session);
         drawObjectList(session, viewport);
-        if (auto* object = session.selected())
+        if (auto *object = session.selected())
             drawInspector(*object);
         drawTransformTools(viewport);
         drawExport(session);
@@ -200,7 +200,7 @@ namespace idk::editor
                            "rotate / scale\nF: focus   Ctrl+D: duplicate   Delete: remove");
     }
 
-    void EditorUI::drawImportDialog(const EditorSession& session)
+    void EditorUI::drawImportDialog(const EditorSession &session)
     {
         if (mImport.open)
         {
@@ -247,7 +247,7 @@ namespace idk::editor
         ImGui::EndPopup();
     }
 
-    void EditorUI::drawDialogs(const EditorSession& session)
+    void EditorUI::drawDialogs(const EditorSession &session)
     {
         if (ImGui::BeginPopupModal("Clear model?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
         {
@@ -285,11 +285,11 @@ namespace idk::editor
         drawImportDialog(session);
     }
 
-    EditorAction EditorUI::draw(EditorSession& session, EditorViewport& viewport, gfx::RenderEngine& renderer)
+    EditorAction EditorUI::draw(EditorSession &session, EditorViewport &viewport, gfx::RenderEngine &renderer)
     {
         mAction = {};
         pollFileDialog();
-        auto* mainViewport = ImGui::GetMainViewport();
+        auto *mainViewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(mainViewport->WorkPos);
         ImGui::SetNextWindowSize(mainViewport->WorkSize);
         ImGui::Begin("Model editor", nullptr,

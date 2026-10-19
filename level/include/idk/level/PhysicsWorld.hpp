@@ -8,21 +8,21 @@ namespace idk::level
     // Persistent across transitions. Prepared terrain is not added to the
     // collision world until commit; discard leaves active terrain untouched.
     // Players must be shut down before their world.
-    class PhysicsWorld final : public idk::Immobile
+    class PhysicsWorld final: public idk::Immobile
     {
-      public:
+    public:
         ~PhysicsWorld();
-        bool initialize(Error&);
+        bool initialize(Error &);
         void shutdown();
-        bool prepareTerrain(const Level&, Error&);
+        bool prepareTerrain(const Level &, Error &);
         void discardTerrain();
         void commitTerrain();
         void clearTerrain();
 
-      private:
+    private:
         friend class Player;
         struct Impl;
-        Impl* mImpl = nullptr;
+        Impl *mImpl = nullptr;
         bool mOwnsFactory = false;
     };
 }

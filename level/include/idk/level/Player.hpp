@@ -8,19 +8,19 @@ namespace idk::level
 {
     // A 1.8m capsule with a 0.3m radius. Position denotes the player's feet.
     // Jolt owns collision storage; update scratch uses a bounded 8 MiB budget.
-    class Player final : public idk::Immobile
+    class Player final: public idk::Immobile
     {
-      public:
+    public:
         ~Player();
-        bool initialize(PhysicsWorld&, Error&);
+        bool initialize(PhysicsWorld &, Error &);
         void shutdown();
         void reset(glm::vec3 feet);
         void step(glm::vec3 horizontalVelocity, bool jump, float dt);
         glm::vec3 position() const;
         bool grounded() const;
 
-      private:
+    private:
         struct Impl;
-        Impl* mImpl = nullptr;
+        Impl *mImpl = nullptr;
     };
 } // namespace idk::level

@@ -3,8 +3,10 @@
 #include "RenderTypes.hpp"
 #include "libidk/Service.hpp"
 
-
-namespace idk::asset { struct Model; }
+namespace idk::asset
+{
+    struct Model;
+}
 
 namespace idk::gfx
 {
@@ -23,26 +25,26 @@ namespace idk::gfx
     // One active renderer backed by bounded static storage. No heap ownership.
     // One owning GL thread. Submit during application onPreRender, after the
     // renderer clears its queue. Scene execution precedes editor onMidRender.
-    class RenderEngine final : public idk::Service
+    class RenderEngine final: public idk::Service
     {
     public:
         RenderEngine();
         ~RenderEngine() override;
-        void onInit(EngineAPI&) override;
-        void onShutdown(EngineAPI&) override;
-        void onPreRender(EngineAPI&) override;
-        void onMidRender(EngineAPI&) override;
-        void onPostRender(EngineAPI&) override;
+        void onInit(EngineAPI &) override;
+        void onShutdown(EngineAPI &) override;
+        void onPreRender(EngineAPI &) override;
+        void onMidRender(EngineAPI &) override;
+        void onPostRender(EngineAPI &) override;
 
         bool IsInitialized() const;
 
-        MeshHandle CreateMesh(const MeshDesc&);
-        TextureHandle CreateTexture(const TextureDesc&);
-        SamplerHandle CreateSampler(const SamplerDesc&);
-        ShaderHandle CreateShader(const ShaderDesc&);
+        MeshHandle CreateMesh(const MeshDesc &);
+        TextureHandle CreateTexture(const TextureDesc &);
+        SamplerHandle CreateSampler(const SamplerDesc &);
+        ShaderHandle CreateShader(const ShaderDesc &);
         // Failure preserves the old program.
-        bool ReloadShader(ShaderHandle, const ShaderDesc&);
-        MaterialHandle CreateMaterial(const MaterialDesc&);
+        bool ReloadShader(ShaderHandle, const ShaderDesc &);
+        MaterialHandle CreateMaterial(const MaterialDesc &);
         void DestroyMesh(MeshHandle);
         void DestroyTexture(TextureHandle);
         void DestroySampler(SamplerHandle);
@@ -50,23 +52,23 @@ namespace idk::gfx
         void DestroyMaterial(MaterialHandle);
 
         // Transactional upload: failure releases every partially created resource.
-        ModelHandle UploadModel(const idk::asset::Model&);
+        ModelHandle UploadModel(const idk::asset::Model &);
         void DestroyModel(ModelHandle);
-        bool SubmitModel(ModelHandle, const glm::mat4& transform = glm::mat4(1.0f));
+        bool SubmitModel(ModelHandle, const glm::mat4 &transform = glm::mat4(1.0f));
 
-        bool Submit(const DrawItem&);
-        void SetCamera(const Camera&);
+        bool Submit(const DrawItem &);
+        void SetCamera(const Camera &);
         void SetClearColor(glm::vec4);
         // Frame-local rectangle in drawable pixels, with OpenGL bottom-left origin.
         // Resets to the full window in onPreRender. An empty rectangle hides the scene.
         void SetViewport(int x, int y, int width, int height);
         ShaderHandle GetDefaultShader() const;
-        void* GetWindowHandle() const;
-        void* GetContextHandle() const;
+        void *GetWindowHandle() const;
+        void *GetContextHandle() const;
 
     private:
         struct Impl;
-        Impl* mImpl = nullptr;
+        Impl *mImpl = nullptr;
         void release();
     };
 }

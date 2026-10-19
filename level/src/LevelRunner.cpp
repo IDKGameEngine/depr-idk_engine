@@ -7,8 +7,8 @@
 
 namespace idk::level
 {
-    bool LevelRunner::initialize(Storage& storage, PhysicsWorld& world, Player& player, gfx::RenderEngine& renderer,
-                                 const char* root, Error& error)
+    bool LevelRunner::initialize(Storage &storage, PhysicsWorld &world, Player &player, gfx::RenderEngine &renderer,
+                                 const char *root, Error &error)
     {
         if (mStorage || !renderer.IsInitialized())
             return error.set("Level runner requires an initialized renderer.");
@@ -22,7 +22,7 @@ namespace idk::level
         return true;
     }
 
-    bool LevelRunner::loadInitial(const char* path, Error& error)
+    bool LevelRunner::loadInitial(const char *path, Error &error)
     {
         if (!mStorage || mGeneration)
             return error.set("Initial level can only be loaded once.");
@@ -32,7 +32,7 @@ namespace idk::level
         return loadAndCommit(absolute, error);
     }
 
-    bool LevelRunner::requestTransition(const asset::ExitDestination& destination, Error& error)
+    bool LevelRunner::requestTransition(const asset::ExitDestination &destination, Error &error)
     {
         if (!mStorage || !mGeneration)
             return error.set("No active level.");
@@ -44,7 +44,7 @@ namespace idk::level
         return true;
     }
 
-    LevelRunner::Transition LevelRunner::processPending(Error& error)
+    LevelRunner::Transition LevelRunner::processPending(Error &error)
     {
         if (!pending())
             return Transition::None;
@@ -66,7 +66,7 @@ namespace idk::level
         return loadAndCommit(absolute, error) ? Transition::Changed : Transition::Failed;
     }
 
-    bool LevelRunner::loadAndCommit(const char* path, Error& error)
+    bool LevelRunner::loadAndCommit(const char *path, Error &error)
     {
         unsigned bank = mGeneration ? 1 - mBank : 0;
         idk::Arena output(mStorage->banks[bank]), scratch(mStorage->scratch);

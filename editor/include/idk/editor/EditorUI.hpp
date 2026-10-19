@@ -32,14 +32,14 @@ namespace idk::editor
 
     class EditorUI
     {
-      public:
-        EditorAction draw(EditorSession&, EditorViewport&, gfx::RenderEngine&);
-        void chooseImportFile(SDL_Window*);
-        void showImportError(const char*);
-        void confirmOverwrite(const char* path);
+    public:
+        EditorAction draw(EditorSession &, EditorViewport &, gfx::RenderEngine &);
+        void chooseImportFile(SDL_Window *);
+        void showImportError(const char *);
+        void confirmOverwrite(const char *path);
         void shutdown();
 
-      private:
+    private:
         struct ImportOptions
         {
             char path[ImportFileDialog::PathCapacity]{};
@@ -62,13 +62,13 @@ namespace idk::editor
 
         void pollFileDialog();
         void drawMenu();
-        void drawTools(EditorSession&, EditorViewport&);
-        void drawShapes(EditorSession&);
-        void drawObjectList(EditorSession&, EditorViewport&);
-        void drawInspector(ShapeObject&);
-        void drawTransformTools(EditorViewport&);
-        void drawExport(const EditorSession&);
-        void drawDialogs(const EditorSession&);
-        void drawImportDialog(const EditorSession&);
+        void drawTools(EditorSession &, EditorViewport &);
+        void drawShapes(EditorSession &);
+        void drawObjectList(EditorSession &, EditorViewport &);
+        void drawInspector(ShapeObject &);
+        void drawTransformTools(EditorViewport &);
+        void drawExport(const EditorSession &);
+        void drawDialogs(const EditorSession &);
+        void drawImportDialog(const EditorSession &);
     };
 } // namespace idk::editor

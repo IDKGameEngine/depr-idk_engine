@@ -44,7 +44,7 @@ namespace idk::editor
         mStatus[0] = 0;
     }
 
-    void ShapeSession::setStatus(const char* message)
+    void ShapeSession::setStatus(const char *message)
     {
         std::snprintf(mStatus, sizeof(mStatus), "%s", message);
     }
