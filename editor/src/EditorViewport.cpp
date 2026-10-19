@@ -1,5 +1,5 @@
 #include "idk/editor/EditorViewport.hpp"
-#include "idk/editor/EditorSession.hpp"
+#include "idk/editor/ShapeSession.hpp"
 #include "idk/gfx/RenderEngine.hpp"
 #include <imgui.h>
 #include <ImGuizmo.h>
@@ -30,7 +30,7 @@ namespace idk::editor
             resetCamera();
     }
 
-    void EditorViewport::focusSelection(const EditorSession& session)
+    void EditorViewport::focusSelection(const ShapeSession& session)
     {
         focus(session.document(), session.selection());
     }
@@ -97,7 +97,7 @@ namespace idk::editor
         ImGuizmo::SetOrthographic(false);
     }
 
-    void EditorViewport::handleShortcuts(EditorSession& session)
+    void EditorViewport::handleShortcuts(ShapeSession& session)
     {
         const auto& io = ImGui::GetIO();
         if (io.WantTextInput || ImGui::IsAnyItemActive())
@@ -116,7 +116,7 @@ namespace idk::editor
             session.deleteSelection();
     }
 
-    void EditorViewport::manipulate(EditorSession& session, const gfx::Camera& camera)
+    void EditorViewport::manipulate(ShapeSession& session, const gfx::Camera& camera)
     {
         auto* object = session.selected();
         if (!object)
@@ -146,7 +146,7 @@ namespace idk::editor
             session.setStatus("Transform must have nonzero scale and no shear.");
     }
 
-    void EditorViewport::pick(EditorSession& session, const Canvas& canvas, const gfx::Camera& camera)
+    void EditorViewport::pick(ShapeSession& session, const Canvas& canvas, const gfx::Camera& camera)
     {
         if (!canvas.hovered || !ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGuizmo::IsOver() ||
             ImGuizmo::IsUsing())
@@ -162,7 +162,7 @@ namespace idk::editor
         session.select(session.document().pick(start, glm::normalize(end - start)));
     }
 
-    void EditorViewport::draw(EditorSession& session, gfx::RenderEngine& renderer)
+    void EditorViewport::draw(ShapeSession& session, gfx::RenderEngine& renderer, const char* title, bool grid)
     {
         const ImVec2 origin = ImGui::GetCursorScreenPos();
         const ImVec2 size = ImGui::GetContentRegionAvail();
@@ -181,13 +181,20 @@ namespace idk::editor
         auto camera = navigate(canvas);
         renderer.SetCamera(camera);
         configureViewport(renderer, canvas);
+        if (grid)
+        {
+            const glm::mat4 ground(1);
+            ImGuizmo::DrawGridCustomColor(glm::value_ptr(camera.view), glm::value_ptr(camera.proj),
+                                          glm::value_ptr(ground), 20, 1, 1, IM_COL32(100, 110, 130, 80),
+                                          IM_COL32(100, 110, 130, 40), IM_COL32(120, 150, 200, 130));
+        }
         if (canvas.hovered)
             handleShortcuts(session);
         manipulate(session, camera);
         pick(session, canvas, camera);
 
         auto* draw = ImGui::GetWindowDrawList();
-        draw->AddText(ImVec2(origin.x + 12, origin.y + 10), IM_COL32(190, 200, 220, 255), "Shape model builder");
+        draw->AddText(ImVec2(origin.x + 12, origin.y + 10), IM_COL32(190, 200, 220, 255), title);
         if (const auto* object = session.selected())
             draw->AddText(ImVec2(origin.x + 12, origin.y + 12 + ImGui::GetTextLineHeight()),
                           IM_COL32(255, 210, 90, 255), object->name);

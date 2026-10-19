@@ -4,12 +4,16 @@ Build inside Steam Runtime using `./env.sh`, followed by `./build.sh` from the
 workspace root. Launch `./build-debug/editor` from the same container. The editor
 starts with a box; **New model** clears the document after confirmation.
 
+The separate [mapedit level editor](../mapedit/README.md) builds alongside this
+tool and places terrain, spawn/entry, and exit locations.
+
 ## Code structure
 
 | Component | Responsibility |
 | --- | --- |
 | [EditorApplication](src/Editor.cpp) | Initializes services, builds each frame, and executes UI actions after drawing. |
 | [EditorSession](src/EditorSession.cpp) | Owns the CPU document, selection, status, and arena-backed import/export operations. |
+| [ShapeSession](src/ShapeSession.cpp) | Shares document, selection, status, and shape commands between model and map editors. |
 | [EditorUI](src/EditorUI.cpp) | Draws the sidebar and confirmation dialogs; owns file-picker and export dialog state. |
 | [EditorViewport](src/EditorViewport.cpp) | Owns the orbit camera and transform tools; handles navigation, shortcuts, picking, and gizmos. |
 | [ScenePreview](src/ScenePreview.cpp) | Owns shader, mesh, and material handles; uploads, caches, submits, and releases GPU resources. |

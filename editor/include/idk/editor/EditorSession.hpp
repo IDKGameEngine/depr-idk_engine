@@ -1,12 +1,12 @@
 #pragma once
 
-#include "ShapeDocument.hpp"
+#include "ShapeSession.hpp"
 
 namespace idk::editor
 {
     // CPU document, selection and file I/O. Storage is supplied by the caller
     // and must outlive the session. No ImGui, SDL or graphics API dependencies.
-    class EditorSession
+    class EditorSession : public ShapeSession
     {
       public:
         struct Storage
@@ -33,35 +33,14 @@ namespace idk::editor
 
         bool initialize(Storage&);
 
-        ShapeDocument& document() { return mDocument; }
-
-        const ShapeDocument& document() const { return mDocument; }
-
-        uint32_t selection() const { return mSelection; }
-
-        ShapeObject* selected() { return mDocument.get(mSelection); }
-
-        void select(uint32_t slot);
-        void addShape(asset::ShapeKind);
-        void duplicateSelection();
-        void deleteSelection();
-        void clear();
-
         // Preparing never changes the live document. Commit only after the
         // candidate's GPU upload succeeds. Valid until the next prepare call.
         bool prepareImport(const char* path, bool replace, ImportCandidate&);
         void commitImport(const ImportCandidate&, const char* path);
         ExportResult exportModel(const char* path, bool overwrite = false);
 
-        const char* status() const { return mStatus; }
-
-        void setStatus(const char* message);
-
       private:
-        ShapeDocument mDocument;
         Storage* mStorage = nullptr;
         uint32_t mImportBank = 0;
-        uint32_t mSelection = asset::NoIndex;
-        char mStatus[640]{};
     };
 } // namespace idk::editor

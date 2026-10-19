@@ -16,47 +16,6 @@ namespace idk::editor
         return true;
     }
 
-    void EditorSession::select(uint32_t slot)
-    {
-        mSelection = mDocument.get(slot) ? slot : asset::NoIndex;
-    }
-
-    void EditorSession::addShape(asset::ShapeKind kind)
-    {
-        uint32_t slot = mDocument.add(kind);
-        if (slot == asset::NoIndex)
-        {
-            std::snprintf(mStatus, sizeof(mStatus), "The model is limited to %u objects.", ShapeDocument::Capacity);
-            return;
-        }
-        mSelection = slot;
-        mStatus[0] = 0;
-    }
-
-    void EditorSession::duplicateSelection()
-    {
-        if (!selected())
-            return;
-        uint32_t slot = mDocument.duplicate(mSelection);
-        if (slot != asset::NoIndex)
-            mSelection = slot;
-        else
-            std::snprintf(mStatus, sizeof(mStatus), "The model is limited to %u objects.", ShapeDocument::Capacity);
-    }
-
-    void EditorSession::deleteSelection()
-    {
-        mDocument.remove(mSelection);
-        mSelection = asset::NoIndex;
-    }
-
-    void EditorSession::clear()
-    {
-        mDocument.clear();
-        mSelection = asset::NoIndex;
-        mStatus[0] = 0;
-    }
-
     bool EditorSession::prepareImport(const char* path, bool replace, ImportCandidate& candidate)
     {
         if (!mStorage)
@@ -115,10 +74,5 @@ namespace idk::editor
 
         std::snprintf(mStatus, sizeof(mStatus), "Export failed: %s", error.message);
         return ExportResult::Failed;
-    }
-
-    void EditorSession::setStatus(const char* message)
-    {
-        std::snprintf(mStatus, sizeof(mStatus), "%s", message);
     }
 } // namespace idk::editor

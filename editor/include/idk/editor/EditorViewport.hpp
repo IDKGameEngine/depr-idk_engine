@@ -9,7 +9,7 @@ namespace idk::gfx
 
 namespace idk::editor
 {
-    class EditorSession;
+    class ShapeSession;
     class ShapeDocument;
 
     enum class TransformTool
@@ -34,9 +34,9 @@ namespace idk::editor
     class EditorViewport
     {
       public:
-        void draw(EditorSession&, gfx::RenderEngine&);
+        void draw(ShapeSession&, gfx::RenderEngine&, const char* title = "Shape model builder", bool grid = false);
         void resetCamera();
-        void focusSelection(const EditorSession&);
+        void focusSelection(const ShapeSession&);
         void frameAll(const ShapeDocument&);
 
         TransformSettings& tools() { return mTools; }
@@ -64,8 +64,8 @@ namespace idk::editor
         void focus(const ShapeDocument&, uint32_t slot);
         gfx::Camera navigate(const Canvas&);
         void configureViewport(gfx::RenderEngine&, const Canvas&);
-        void handleShortcuts(EditorSession&);
-        void manipulate(EditorSession&, const gfx::Camera&);
-        void pick(EditorSession&, const Canvas&, const gfx::Camera&);
+        void handleShortcuts(ShapeSession&);
+        void manipulate(ShapeSession&, const gfx::Camera&);
+        void pick(ShapeSession&, const Canvas&, const gfx::Camera&);
     };
 } // namespace idk::editor

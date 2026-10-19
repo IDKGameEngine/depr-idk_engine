@@ -1,10 +1,16 @@
 project(editor)
 
-add_library(idkeditor_shapes STATIC src/ShapeDocument.cpp src/ShapeImport.cpp src/EditorSession.cpp)
+add_library(idkeditor_shapes STATIC src/ShapeDocument.cpp src/ShapeImport.cpp src/ShapeSession.cpp src/EditorSession.cpp)
 target_compile_features(idkeditor_shapes PUBLIC cxx_std_23)
 target_include_directories(idkeditor_shapes PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(idkeditor_shapes PUBLIC idkengine_assets)
 target_compile_options(idkeditor_shapes PRIVATE -fno-exceptions)
+
+# The model and map editors share rendering, navigation, picking and gizmos.
+add_library(idkeditor_viewport STATIC src/EditorViewport.cpp src/ScenePreview.cpp)
+target_compile_features(idkeditor_viewport PUBLIC cxx_std_23)
+target_link_libraries(idkeditor_viewport PUBLIC idkeditor_shapes idkengine_gfx IdkThirdParty::imgui imguizmo::imguizmo)
+target_compile_options(idkeditor_viewport PRIVATE -fno-exceptions -Wno-missing-field-initializers)
 
 add_executable(
     ${PROJECT_NAME}
@@ -21,14 +27,12 @@ target_include_directories(
 target_link_libraries(
     ${PROJECT_NAME}
     PUBLIC idkengine_common idkengine_gfx idkengine_engine
-    PRIVATE IdkThirdParty::imgui imguizmo::imguizmo idkeditor_shapes
+    PRIVATE idkeditor_viewport
 )
 target_sources(
     ${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Editor.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/EditorUI.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/EditorViewport.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ScenePreview.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ImportFileDialog.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Main.cpp"
 )
@@ -48,8 +52,8 @@ add_custom_command(
     DEPENDS "${preview_dir}/preview.vert.glsl" "${preview_dir}/preview.frag.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../gfx/cmake/EmbedShaders.cmake"
     VERBATIM)
-target_sources(${PROJECT_NAME} PRIVATE "${preview_dir}/PreviewShaders.hpp")
-target_include_directories(${PROJECT_NAME} PRIVATE "${preview_dir}")
+target_sources(idkeditor_viewport PRIVATE "${preview_dir}/PreviewShaders.hpp")
+target_include_directories(idkeditor_viewport PRIVATE "${preview_dir}")
 
 option(IDK_BUILD_EDITOR_TESTS "Build shape document and GLB export integration checks" OFF)
 if(IDK_BUILD_EDITOR_TESTS)
