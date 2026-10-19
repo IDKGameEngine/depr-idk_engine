@@ -2,6 +2,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <limits>
 
 namespace idk::editor
@@ -110,8 +111,12 @@ namespace idk::editor
                 object = *source;
                 object.position += glm::vec3(.25f, 0, .25f);
                 if (source->isImported())
-                    std::snprintf(object.name, sizeof(object.name), "%.*s copy", int(sizeof(object.name)) - 6,
+                {
+                    char name[sizeof(object.name)] = {};
+                    std::snprintf(name, sizeof(name), "%.*s copy", int(sizeof(name)) - 6,
                                   source->name);
+                    std::memcpy(object.name, name, sizeof(name));
+                }
                 else
                     std::snprintf(object.name, sizeof(object.name), "%s %u", asset::ShapeName(source->shape),
                                   ++mSerial);
