@@ -1,6 +1,17 @@
 # CMAKE_PREFIX_PATH supplies installation prefixes (including their bin dirs).
 # IDK_SLANGC can explicitly select a compiler outside those prefixes or PATH.
-find_program(IDK_SLANGC NAMES slangc REQUIRED)
+include_guard(GLOBAL)
+
+find_program(IDK_SLANGC NAMES slangc)
+if(NOT IDK_SLANGC)
+    message(FATAL_ERROR
+        "Slang shader compiler (slangc) was not found or is not executable.\n"
+        "From the workspace root inside steamrt4, run:\n"
+        "  ./dep-build.sh vulkan-sdk\n"
+        "If slangc is already installed, repair its executable permission with:\n"
+        "  chmod u+x idk_build/local/bin/slangc\n"
+        "For a custom installation, pass -DIDK_SLANGC=/absolute/path/to/slangc.")
+endif()
 
 function(idk_compile_slang output source entry stage)
     get_filename_component(source "${source}" ABSOLUTE)

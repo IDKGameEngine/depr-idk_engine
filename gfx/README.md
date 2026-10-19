@@ -22,6 +22,18 @@ installation can be selected with `-DIDK_SLANGC=/absolute/path/to/slangc`.
 The compiler must have execute permission. Verified with Slang 2026.13.1 and
 2026.20.
 
+Install or reinstall the compiler from the workspace root inside `steamrt4`:
+
+```bash
+git -C idk_build submodule update --init --recursive
+./dep-build.sh vulkan-sdk
+./build.sh
+```
+
+Older SDK installers stripped executable permissions from tools. If
+`idk_build/local/bin/slangc` exists but CMake cannot find it, repair the existing
+installation with `chmod u+x idk_build/local/bin/slangc`, then run `./build.sh`.
+
 `shaders/default.slang` is compiled separately for its vertex and fragment entry
 points, targeting GLSL 4.60 with column-major matrix storage. The resulting GLSL
 is embedded into the engine. Include dependencies are tracked by Slang depfiles;
