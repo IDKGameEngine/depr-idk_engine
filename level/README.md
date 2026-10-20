@@ -6,6 +6,44 @@ examples into `content/level/playground.idklvl` and `content/level/finish.idklvl
 No additional dependencies are needed; the playtest controller uses the project's
 existing Jolt dependency.
 
+## Parkour series
+
+The normal build also compiles and installs five editable parkour courses. Their
+exits link in the order below, then lead to `level/finish.idklvl`, which completes
+the run. All destination levels are installed together, so **Build & Play** can
+start from any course.
+
+| Map in `content/level` | Course | Jumps |
+| --- | --- | --- |
+| `parkour_01_first_steps.idkmap` | Broad stepping stones, low rises, and round landings | 8 |
+| `parkour_02_zigzag.idkmap` | Alternating diagonal jumps and smaller landing pads | 9 |
+| `parkour_03_spiral.idkmap` | Sixteen ascending jumps around a square spiral | 16 |
+| `parkour_04_balance.idkmap` | Narrow beams, lateral offsets, and right-angle turns | 9 |
+| `parkour_05_finale.idkmap` | Rising pads, a sprint gap, and a final balance section | 10 |
+
+Launch `./build-debug/mapedit`, enter `level/parkour_01_first_steps.idkmap` in
+**Map file**, and choose **Open**, then **Build & Play**. The same workflow works
+for each map. To publish edits for later transitions, set the build output to
+the matching `level/parkour_01_first_steps.idklvl` path and choose **Build level**;
+**Build & Play** uses a temporary snapshot of the current map.
+
+Platforms are numbered in route order in the object list. Yellow stripes mark
+landing centres, green marks the spawn, and orange arches mark the exits. Face
+the next platform, walk to the edge, then jump; use Shift to run across the long
+gap after the finale's rest deck. R restarts the current course after a miss.
+The wide rest decks are safe places to stop; they do not change the spawn.
+
+To play the full chain directly from the workspace root:
+
+```bash
+./build-debug/game --level build-debug/content/level/parkour_01_first_steps.idklvl
+```
+
+Editable originals live in `idk_engine/level/examples/parkour_*.idkmap`. The build
+replaces installed copies from these originals, so save lasting edits back to
+the source map before rebuilding the workspace. Release builds install the same
+series under `build-release/content/level`.
+
 ## In the editor
 
 Open `level/playground.idkmap` in the installed `mapedit`, or create a map with
@@ -85,6 +123,12 @@ All terrain shapes have static triangle collision, including transformed,
 nonuniformly scaled, and mirrored shapes. Planes collide from both sides. The
 controller supports gravity, ground contact, slopes, stepping, and jumping.
 Falling 50 metres below the lowest terrain vertex restarts the player.
+
+Player physics runs at the engine's fixed rate (30 Hz by default). The camera
+interpolates the last two physics positions using the fixed timer's remaining
+fraction, so movement renders smoothly at the display frame rate. Mouse look
+updates every frame. Restarts and level transitions reset both positions to
+the spawn, preventing the camera from blending across a teleport.
 
 An orange translucent box shows the exit volume, using the exit marker's
 position, rotation, and scale. Entering it with the player's capsule queues the

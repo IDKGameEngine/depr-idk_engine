@@ -4,6 +4,11 @@
 `./build.sh` command. Launch `./build-debug/mapedit` in the same environment used
 for `editor` (Steam Runtime via `./env.sh` when needed).
 
+Five linked [parkour courses](../level/README.md#parkour-series) are included in
+the normal build. Enter `level/parkour_01_first_steps.idkmap` in **Map file**,
+choose **Open**, then **Build & Play** to start the series. Each course can also
+be opened, edited, and played separately.
+
 The editor starts with an empty level. Add **Box**, **Sphere**, **Cylinder**, or
 **Plane** terrain/environment objects. Use **Spawn / entry (green)** and
 **Exit (orange)** to add the two level locations. Each location is unique;

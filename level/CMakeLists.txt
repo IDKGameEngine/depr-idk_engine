@@ -20,7 +20,9 @@ target_compile_options(mapc PRIVATE -fno-exceptions)
 install(TARGETS mapc DESTINATION "${CMAKE_INSTALL_PREFIX}")
 
 set(examples)
-foreach(name playground finish)
+foreach(name playground finish
+        parkour_01_first_steps parkour_02_zigzag parkour_03_spiral
+        parkour_04_balance parkour_05_finale)
     set(example "${CMAKE_CURRENT_BINARY_DIR}/${name}.idklvl")
     add_custom_command(OUTPUT "${example}"
         COMMAND $<TARGET_FILE:mapc> "${CMAKE_CURRENT_SOURCE_DIR}/examples/${name}.idkmap" "${example}" --force
@@ -34,7 +36,7 @@ add_custom_target(idk_playtest_example ALL DEPENDS ${examples})
 if(IDK_BUILD_EDITOR_TESTS)
     enable_testing()
     add_executable(idk_level_tests tests/Level.cpp)
-    target_link_libraries(idk_level_tests PRIVATE idklevel_build)
+    target_link_libraries(idk_level_tests PRIVATE idklevel_build libidk)
     target_compile_options(idk_level_tests PRIVATE -fno-exceptions)
     add_test(NAME idk_level_tests COMMAND idk_level_tests)
     add_executable(idk_level_runner_tests tests/LevelRunner.cpp)

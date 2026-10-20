@@ -40,3 +40,8 @@ double idk::EngineAPI::getFixedDeltaTimeSec()
     return mFixedDeltaTimeSec;
 }
 
+double idk::EngineAPI::getFixedUpdateAlpha()
+{
+    return mFixedUpdateAlpha;
+}
+

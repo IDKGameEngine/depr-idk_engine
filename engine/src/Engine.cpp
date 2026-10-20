@@ -83,6 +83,7 @@ void idk::Engine::engineUpdate()
     {
         dispatchFixedUpdate(mApi);
     }
+    mApi.mFixedUpdateAlpha = mFixedTimer.getInterpolationAlpha();
     // -----------------------------------------------------
 }
 

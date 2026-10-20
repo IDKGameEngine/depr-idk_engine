@@ -1,0 +1,237 @@
+IDKMAP 2
+destination level/parkour_04_balance.idklvl
+objects 39
+object 0 0
+name 01 Start deck
+position -6 -0.4 6
+rotation 0 0 0
+scale 3.6 0.8 3.6
+colour 0.62 0.3 0.82 1
+object 0 0
+name Landing stripe 01
+position -6 0.01 6
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 02 Spiral step
+position -2 0 6
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.684 0.46 0.824 1
+object 0 0
+name Landing stripe 02
+position -2 0.41 6
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 03 Spiral step
+position 2 0.4 6
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.62 0.3 0.82 1
+object 0 0
+name Landing stripe 03
+position 2 0.81 6
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 04 Spiral step
+position 6 0.8 6
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.684 0.46 0.824 1
+object 0 0
+name Landing stripe 04
+position 6 1.21 6
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 05 Spiral step
+position 6 1.2 2
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.62 0.3 0.82 1
+object 0 0
+name Landing stripe 05
+position 6 1.61 2
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 06 Spiral step
+position 6 1.6 -2
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.684 0.46 0.824 1
+object 0 0
+name Landing stripe 06
+position 6 2.01 -2
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 07 Spiral step
+position 6 2 -6
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.62 0.3 0.82 1
+object 0 0
+name Landing stripe 07
+position 6 2.41 -6
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 08 Spiral step
+position 2 2.4 -6
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.684 0.46 0.824 1
+object 0 0
+name Landing stripe 08
+position 2 2.81 -6
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 09 Spiral step
+position -2 2.8 -6
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.62 0.3 0.82 1
+object 0 0
+name Landing stripe 09
+position -2 3.21 -6
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 10 Spiral step
+position -6 3.2 -6
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.684 0.46 0.824 1
+object 0 0
+name Landing stripe 10
+position -6 3.61 -6
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 11 Spiral step
+position -6 3.6 -2
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.62 0.3 0.82 1
+object 0 0
+name Landing stripe 11
+position -6 4.01 -2
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 12 Spiral step
+position -6 4 2
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.684 0.46 0.824 1
+object 0 0
+name Landing stripe 12
+position -6 4.41 2
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 13 Spiral step
+position -6 4.4 6
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.62 0.3 0.82 1
+object 0 0
+name Landing stripe 13
+position -6 4.81 6
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 14 Spiral step
+position -2 4.8 6
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.684 0.46 0.824 1
+object 0 0
+name Landing stripe 14
+position -2 5.21 6
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 15 Spiral step
+position 2 5.2 6
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.62 0.3 0.82 1
+object 0 0
+name Landing stripe 15
+position 2 5.61 6
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 16 Spiral step
+position 6 5.6 6
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.684 0.46 0.824 1
+object 0 0
+name Landing stripe 16
+position 6 6.01 6
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 17 Exit deck
+position 6 6 2
+rotation 0 0 0
+scale 3.6 0.8 3.6
+colour 0.62 0.3 0.82 1
+object 0 0
+name Landing stripe 17
+position 6 6.41 2
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 1 2
+name Player start - face the route
+position -6 0.15 6
+rotation 0 -90 0
+scale 0.5 1 0.5
+colour 0.15 0.9 0.4 1
+object 2 0
+name Exit - next course
+position 6 7.4 2
+rotation 0 0 0
+scale 1.5 2 1.5
+colour 1 0.45 0.1 1
+object 0 0
+name Finish arch left
+position 4.75 7.8 2
+rotation 0 0 0
+scale 0.2 2.8 0.3
+colour 1 0.45 0.1 1
+object 0 0
+name Finish arch right
+position 7.25 7.8 2
+rotation 0 0 0
+scale 0.2 2.8 0.3
+colour 1 0.45 0.1 1
+object 0 0
+name Finish arch lintel
+position 6 9.25 2
+rotation 0 0 0
+scale 2.7 0.2 0.3
+colour 1 0.65 0.15 1

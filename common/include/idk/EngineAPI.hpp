@@ -46,6 +46,8 @@ namespace idk
         void   quit();
         double getDeltaTimeSec();
         double getFixedDeltaTimeSec();
+        // Fraction of a fixed step remaining, updated before render callbacks.
+        double getFixedUpdateAlpha();
 
         template <typename ServiceType>
         ServiceType *getService() { return mOwner->getService<ServiceType>(); }
@@ -57,6 +59,7 @@ namespace idk
         std::atomic<bool>   mShouldQuit{ false };
         double              mDeltaTimeSec{ 0.01 };
         double              mFixedDeltaTimeSec{ 0.01 };
+        double              mFixedUpdateAlpha{ 0.0 };
 
     };
 

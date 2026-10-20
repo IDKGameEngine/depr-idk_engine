@@ -45,6 +45,7 @@ namespace idk::level
             mCharacter->Release();
         mCharacter = nullptr;
         mWorld = nullptr;
+        mPreviousPosition = {};
     }
 
     void Player::reset(glm::vec3 feet)
@@ -55,6 +56,7 @@ namespace idk::level
         mCharacter->SetLinearVelocity(JPH::Vec3::sZero());
         mCharacter->RefreshContacts(mWorld->mImpl->system.GetDefaultBroadPhaseLayerFilter(0),
                                     mWorld->mImpl->system.GetDefaultLayerFilter(0), {}, {}, mWorld->mImpl->temporary);
+        mPreviousPosition = position();
     }
 
     void Player::step(glm::vec3 movement, bool jump, float dt)
@@ -62,6 +64,7 @@ namespace idk::level
         if (!mCharacter || !std::isfinite(dt) || dt <= 0)
             return;
         dt = std::min(dt, 1.0f / 30);
+        mPreviousPosition = position();
         auto &character = *mCharacter;
         float vertical = character.GetLinearVelocity().GetY();
         if (grounded() && vertical <= .1f)
@@ -79,6 +82,11 @@ namespace idk::level
             return {};
         auto p = mCharacter->GetPosition();
         return {float(p.GetX()), float(p.GetY()), float(p.GetZ())};
+    }
+
+    glm::vec3 Player::interpolatedPosition(float alpha) const
+    {
+        return glm::mix(mPreviousPosition, position(), std::clamp(alpha, 0.0f, 1.0f));
     }
 
     bool Player::grounded() const

@@ -1,0 +1,165 @@
+IDKMAP 2
+destination level/finish.idklvl
+objects 27
+object 0 0
+name 01 Start deck
+position 0 -0.4 4
+rotation 0 0 0
+scale 5 0.8 5
+colour 0.85 0.35 0.16 1
+object 0 0
+name Landing stripe 01
+position 0 0.01 4
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 02 Rising step
+position 0 0.1 -0.7
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.845 0.495 0.362 1
+object 0 0
+name Landing stripe 02
+position 0 0.51 -0.7
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 2
+name 03 Diagonal round pad
+position -3.1 0.6 -4.6
+rotation 0 0 0
+scale 2.6 0.8 2.6
+colour 0.85 0.35 0.16 1
+object 0 0
+name Landing stripe 03
+position -3.1 1.01 -4.6
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 04 High step
+position 0 1.1 -8.6
+rotation 0 0 0
+scale 2.6 0.8 2.6
+colour 0.845 0.495 0.362 1
+object 0 0
+name Landing stripe 04
+position 0 1.51 -8.6
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 05 Rest deck
+position 0 1.1 -13.2
+rotation 0 0 0
+scale 4.5 0.8 4.5
+colour 0.85 0.35 0.16 1
+object 0 0
+name Landing stripe 05
+position 0 1.51 -13.2
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 06 Sprint landing
+position 0 1.1 -22
+rotation 0 0 0
+scale 3 0.8 3
+colour 0.845 0.495 0.362 1
+object 0 0
+name Landing stripe 06
+position 0 1.51 -22
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 07 Balance beam
+position 0 1.1 -27.8
+rotation 0 0 0
+scale 0.95 0.8 5
+colour 0.85 0.35 0.16 1
+object 0 0
+name Landing stripe 07
+position 0 1.51 -27.8
+rotation 0 0 0
+scale 0.57 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 08 Offset pad
+position 2.4 1.4 -33.4
+rotation 0 0 0
+scale 2.4 0.8 2.4
+colour 0.845 0.495 0.362 1
+object 0 0
+name Landing stripe 08
+position 2.4 1.81 -33.4
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 2
+name 09 Rising round pad
+position -0.6 1.9 -37.4
+rotation 0 0 0
+scale 2.6 0.8 2.6
+colour 0.85 0.35 0.16 1
+object 0 0
+name Landing stripe 09
+position -0.6 2.31 -37.4
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 10 Final step
+position 2.4 2.4 -41.4
+rotation 0 0 0
+scale 2.6 0.8 2.6
+colour 0.845 0.495 0.362 1
+object 0 0
+name Landing stripe 10
+position 2.4 2.81 -41.4
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 11 Victory deck
+position 2.4 2.4 -46.4
+rotation 0 0 0
+scale 5 0.8 5
+colour 0.85 0.35 0.16 1
+object 0 0
+name Landing stripe 11
+position 2.4 2.81 -46.4
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 1 2
+name Player start - face the route
+position 0 0.15 4
+rotation 0 0 0
+scale 0.5 1 0.5
+colour 0.15 0.9 0.4 1
+object 2 0
+name Exit - next course
+position 2.4 3.8 -46.4
+rotation 0 0 0
+scale 1.5 2 1.5
+colour 1 0.45 0.1 1
+object 0 0
+name Finish arch left
+position 1.15 4.2 -46.4
+rotation 0 0 0
+scale 0.2 2.8 0.3
+colour 1 0.45 0.1 1
+object 0 0
+name Finish arch right
+position 3.65 4.2 -46.4
+rotation 0 0 0
+scale 0.2 2.8 0.3
+colour 1 0.45 0.1 1
+object 0 0
+name Finish arch lintel
+position 2.4 5.65 -46.4
+rotation 0 0 0
+scale 2.7 0.2 0.3
+colour 1 0.65 0.15 1

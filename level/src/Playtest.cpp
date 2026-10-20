@@ -206,7 +206,7 @@ namespace idk::level
         if (width > 0 && height > 0)
         {
             float yaw = glm::radians(mYaw), pitch = glm::radians(mPitch);
-            auto eye = mPlayer.position() + glm::vec3(0, 1.6f, 0);
+            auto eye = mPlayer.interpolatedPosition(float(api.getFixedUpdateAlpha())) + glm::vec3(0, 1.6f, 0);
             glm::vec3 forward(-std::sin(yaw) * std::cos(pitch), std::sin(pitch), -std::cos(yaw) * std::cos(pitch));
             gfx::Camera camera;
             camera.view = glm::lookAt(eye, eye + forward, glm::vec3(0, 1, 0));

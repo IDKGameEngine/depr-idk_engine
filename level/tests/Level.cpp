@@ -1,6 +1,7 @@
 #include "idk/level/Build.hpp"
 #include "idk/level/Player.hpp"
 #include "idk/mapedit/MapSession.hpp"
+#include "libidk/dsa/Timer.hpp"
 #include <array>
 #include <algorithm>
 #include <cmath>
@@ -22,6 +23,47 @@
 
 namespace
 {
+    bool interpolationChecks(idk::level::Player &player, idk::level::Error &error)
+    {
+        const unsigned rates[] = {60, 120, 144, 240};
+        const double unevenFrames[] = {1.0 / 144, 1.0 / 75, 1.0 / 240, .12, 1.0 / 60};
+        for (unsigned schedule = 0; schedule < 5; ++schedule)
+        {
+            idk::FixedTimer timer(30);
+            player.reset({0, 0, 0});
+            double elapsed = 0;
+            glm::vec3 previousRender = player.position();
+            for (unsigned frame = 0; elapsed < 1; ++frame)
+            {
+                double dt = schedule < 4 ? 1.0 / rates[schedule] : unevenFrames[frame % 5];
+                dt = std::min(dt, 1 - elapsed);
+                elapsed += dt;
+                timer.addDeltaTimeSec(dt);
+                while (timer.step())
+                    player.step({4, 0, 0}, false, float(timer.getStepSec()));
+                double alpha = timer.getInterpolationAlpha();
+                CHECK(alpha >= 0 && alpha < 1);
+                auto rendered = player.interpolatedPosition(float(alpha));
+                // A steady 4 m/s walk must move every render frame after the
+                // initial fixed-step delay, including frames without a tick.
+                float expected = float(4 * std::max(0.0, elapsed - timer.getStepSec()));
+                CHECK(std::abs(rendered.x - expected) < .001f);
+                CHECK(rendered.x >= previousRender.x - .001f);
+                CHECK(rendered.x - previousRender.x <= 4 * dt + .001);
+                previousRender = rendered;
+            }
+        }
+        // Teleports must not blend from the preceding run, even before another
+        // physics tick. This also covers spawn resets used by level transitions.
+        glm::vec3 spawn(-2, 0, 1);
+        player.reset(spawn);
+        for (float alpha : {0.0f, .25f, .5f, .75f, 1.0f})
+            CHECK(player.interpolatedPosition(alpha) == spawn);
+        player.step({4, 0, 0}, false, 1.0f / 30);
+        CHECK(player.interpolatedPosition(0) == spawn);
+        return true;
+    }
+
     bool checks()
     {
         using namespace idk;
@@ -176,6 +218,8 @@ namespace
                 player.step({}, false, 1.0f / 60);
             CHECK(player.grounded());
             CHECK(std::abs(player.position().y) < .05f);
+            CHECK(interpolationChecks(player, error));
+            player.reset(result.entry.position);
             for (int i = 0; i < 180; ++i)
                 player.step({0, 0, -4}, false, 1.0f / 60);
             CHECK(player.position().z > -2.5f && player.position().z < -2.2f);
@@ -242,6 +286,6 @@ int main()
 {
     if (!checks())
         return 1;
-    std::puts("Level build/load, validation, collision, jumping, reset and exit checks passed");
+    std::puts("Level build/load, collision, jumping, render interpolation, reset and exit checks passed");
     return 0;
 }

@@ -22,10 +22,13 @@ namespace idk::level
         void reset(glm::vec3 feet);
         void step(glm::vec3 horizontalVelocity, bool jump, float dt);
         glm::vec3 position() const;
+        // Render between fixed positions; reset() snaps both to the new spawn.
+        glm::vec3 interpolatedPosition(float alpha) const;
         bool grounded() const;
 
     private:
         PhysicsWorld *mWorld = nullptr;
         JPH::CharacterVirtual *mCharacter = nullptr; // One owned Jolt reference.
+        glm::vec3 mPreviousPosition{0};
     };
 } // namespace idk::level

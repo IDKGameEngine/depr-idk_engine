@@ -107,6 +107,7 @@ namespace
         CHECK(runner.initialize(storage, world, player, renderer, files.root, error));
         CHECK(runner.loadInitial(files.a, error));
         CHECK(runner.generation() == 1);
+        CHECK(player.interpolatedPosition(0) == player.position());
         CHECK(!runner.loadInitial(files.b, error));
         auto initialModel = runner.model();
         auto *initialData = runner.current().terrain.data();
@@ -140,6 +141,8 @@ namespace
         CHECK(runner.generation() == 2 && runner.model() != initialModel &&
               runner.current().terrain.data() != initialData);
         CHECK(player.position() == glm::vec3(0, 5.1f, 0));
+        CHECK(player.interpolatedPosition(0) == player.position());
+        CHECK(player.interpolatedPosition(.5f) == player.position());
         for (int i = 0; i < 120; ++i)
             player.step({}, false, 1.0f / 60);
         CHECK(player.grounded() && std::abs(player.position().y - 5) < .05f);
@@ -190,6 +193,7 @@ namespace
             renderer.onPreRender(api);
             CHECK(runner.processPending(error) == LevelRunner::Transition::Changed &&
                   runner.generation() == generation + 1);
+            CHECK(player.interpolatedPosition(0) == player.position());
             player.reset({0, 7, 0});
             for (int tick = 0; tick < 240; ++tick)
                 player.step({}, false, 1.0f / 60);

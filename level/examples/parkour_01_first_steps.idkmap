@@ -1,0 +1,141 @@
+IDKMAP 2
+destination level/parkour_02_zigzag.idklvl
+objects 23
+object 0 0
+name 01 Start deck
+position 0 -0.4 4
+rotation 0 0 0
+scale 5 0.8 5
+colour 0.12 0.65 0.7 1
+object 0 0
+name Landing stripe 01
+position 0 0.01 4
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 02 First gap
+position 0 -0.4 -0.5
+rotation 0 0 0
+scale 3.2 0.8 3
+colour 0.334 0.705 0.74 1
+object 0 0
+name Landing stripe 02
+position 0 0.01 -0.5
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 03 Second gap
+position 0 -0.4 -4.5
+rotation 0 0 0
+scale 3 0.8 2.6
+colour 0.12 0.65 0.7 1
+object 0 0
+name Landing stripe 03
+position 0 0.01 -4.5
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 04 Low step
+position 0 0 -8.3
+rotation 0 0 0
+scale 3 0.8 2.6
+colour 0.334 0.705 0.74 1
+object 0 0
+name Landing stripe 04
+position 0 0.41 -8.3
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 05 Rest deck
+position 0 0 -12.5
+rotation 0 0 0
+scale 4.5 0.8 4
+colour 0.12 0.65 0.7 1
+object 0 0
+name Landing stripe 05
+position 0 0.41 -12.5
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 2
+name 06 Round landing
+position 0 0 -17
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.334 0.705 0.74 1
+object 0 0
+name Landing stripe 06
+position 0 0.41 -17
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 07 Raised landing
+position 0 0.4 -21
+rotation 0 0 0
+scale 2.8 0.8 2.8
+colour 0.12 0.65 0.7 1
+object 0 0
+name Landing stripe 07
+position 0 0.81 -21
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 08 Longer gap
+position 0 0.4 -25.4
+rotation 0 0 0
+scale 3 0.8 3
+colour 0.334 0.705 0.74 1
+object 0 0
+name Landing stripe 08
+position 0 0.81 -25.4
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 0 0
+name 09 Exit deck
+position 0 0.4 -30.2
+rotation 0 0 0
+scale 5 0.8 5
+colour 0.12 0.65 0.7 1
+object 0 0
+name Landing stripe 09
+position 0 0.81 -30.2
+rotation 0 0 0
+scale 1.2 0.02 0.12
+colour 0.95 0.85 0.35 1
+object 1 2
+name Player start - face the route
+position 0 0.15 4
+rotation 0 0 0
+scale 0.5 1 0.5
+colour 0.15 0.9 0.4 1
+object 2 0
+name Exit - next course
+position 0 1.8 -30.2
+rotation 0 0 0
+scale 1.5 2 1.5
+colour 1 0.45 0.1 1
+object 0 0
+name Finish arch left
+position -1.25 2.2 -30.2
+rotation 0 0 0
+scale 0.2 2.8 0.3
+colour 1 0.45 0.1 1
+object 0 0
+name Finish arch right
+position 1.25 2.2 -30.2
+rotation 0 0 0
+scale 0.2 2.8 0.3
+colour 1 0.45 0.1 1
+object 0 0
+name Finish arch lintel
+position 0 3.65 -30.2
+rotation 0 0 0
+scale 2.7 0.2 0.3
+colour 1 0.65 0.15 1
