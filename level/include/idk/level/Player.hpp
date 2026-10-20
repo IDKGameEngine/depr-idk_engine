@@ -16,11 +16,15 @@ namespace idk::level
     class Player final: public idk::Immobile
     {
     public:
+        static constexpr float WalkSpeed = 6.0f;
+        static constexpr float RunSpeed = 10.0f;
+
         ~Player();
         bool initialize(PhysicsWorld &, Error &);
         void shutdown();
         void reset(glm::vec3 feet);
-        void step(glm::vec3 horizontalVelocity, bool jump, float dt);
+        // Desired horizontal velocity; airborne movement preserves momentum.
+        void step(glm::vec3 wishVelocity, bool jump, float dt);
         glm::vec3 position() const;
         // Render between fixed positions; reset() snaps both to the new spawn.
         glm::vec3 interpolatedPosition(float alpha) const;

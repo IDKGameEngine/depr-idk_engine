@@ -147,7 +147,8 @@ namespace idk::level
             mMovement = forward * float(int(keys[SDL_SCANCODE_W]) - int(keys[SDL_SCANCODE_S])) +
                         right * float(int(keys[SDL_SCANCODE_D]) - int(keys[SDL_SCANCODE_A]));
             if (glm::length(mMovement) > 0)
-                mMovement = glm::normalize(mMovement) * (keys[SDL_SCANCODE_LSHIFT] ? 7.0f : 4.0f);
+                mMovement = glm::normalize(mMovement) *
+                            (keys[SDL_SCANCODE_LSHIFT] ? Player::RunSpeed : Player::WalkSpeed);
         }
     }
 

@@ -31,8 +31,13 @@ namespace
         {
             idk::FixedTimer timer(30);
             player.reset({0, 0, 0});
+            // Reach steady speed before checking render cadence independently
+            // of the controller's acceleration.
+            for (unsigned i = 0; i < 15; ++i)
+                player.step({4, 0, 0}, false, 1.0f / 30);
+            float start = player.interpolatedPosition(0).x;
             double elapsed = 0;
-            glm::vec3 previousRender = player.position();
+            glm::vec3 previousRender = player.interpolatedPosition(0);
             for (unsigned frame = 0; elapsed < 1; ++frame)
             {
                 double dt = schedule < 4 ? 1.0 / rates[schedule] : unevenFrames[frame % 5];
@@ -44,9 +49,9 @@ namespace
                 double alpha = timer.getInterpolationAlpha();
                 CHECK(alpha >= 0 && alpha < 1);
                 auto rendered = player.interpolatedPosition(float(alpha));
-                // A steady 4 m/s walk must move every render frame after the
-                // initial fixed-step delay, including frames without a tick.
-                float expected = float(4 * std::max(0.0, elapsed - timer.getStepSec()));
+                // A steady 4 m/s walk must move every render frame, including
+                // frames without a physics tick.
+                float expected = start + float(4 * elapsed);
                 CHECK(std::abs(rendered.x - expected) < .001f);
                 CHECK(rendered.x >= previousRender.x - .001f);
                 CHECK(rendered.x - previousRender.x <= 4 * dt + .001);
@@ -61,6 +66,88 @@ namespace
             CHECK(player.interpolatedPosition(alpha) == spawn);
         player.step({4, 0, 0}, false, 1.0f / 30);
         CHECK(player.interpolatedPosition(0) == spawn);
+        return true;
+    }
+
+    bool movementChecks(idk::level::Player &player, idk::level::Error &error)
+    {
+        using idk::level::Player;
+        float referenceDistance = 0, referenceHeight = 0;
+        for (unsigned rate : {30u, 60u, 120u})
+        {
+            float dt = 1.0f / rate;
+            player.reset({0, 0, 0});
+            for (unsigned i = 0; i < rate / 2; ++i)
+                player.step({Player::WalkSpeed, 0, 0}, false, dt);
+            float distance = player.position().x;
+            CHECK(distance > 2.2f && distance < 3.0f);
+            if (rate == 30)
+                referenceDistance = distance;
+            CHECK(std::abs(distance - referenceDistance) < .03f);
+            auto previous = player.position();
+            player.step({Player::WalkSpeed, 0, 0}, false, dt);
+            CHECK(std::abs((player.position().x - previous.x) / dt - 6) < .05f);
+            // Releasing movement should brake promptly on the ground.
+            previous = player.position();
+            for (unsigned i = 0; i < rate / 2; ++i)
+                player.step({}, false, dt);
+            CHECK(player.position().x - previous.x < .7f);
+            previous = player.position();
+            player.step({}, false, dt);
+            CHECK(glm::distance(player.position(), previous) < .001f);
+            for (unsigned i = 0; i < rate / 5; ++i)
+                player.step({-Player::WalkSpeed, 0, 0}, false, dt);
+            previous = player.position();
+            player.step({-Player::WalkSpeed, 0, 0}, false, dt);
+            CHECK((player.position().x - previous.x) / dt < -5.9f);
+            // Reverse from full speed and reach the opposite target promptly.
+            for (unsigned i = 0; i < rate / 5; ++i)
+                player.step({Player::WalkSpeed, 0, 0}, false, dt);
+            previous = player.position();
+            player.step({Player::WalkSpeed, 0, 0}, false, dt);
+            CHECK((player.position().x - previous.x) / dt > 5.9f);
+
+            player.reset({0, 0, 0});
+            for (unsigned i = 0; i < rate / 2; ++i)
+                player.step({Player::RunSpeed, 0, 0}, false, dt);
+            previous = player.position();
+            player.step({Player::RunSpeed, 0, 0}, false, dt);
+            CHECK(std::abs((player.position().x - previous.x) / dt - 10) < .05f);
+            // Jump with running momentum, then release all directional input.
+            player.step({Player::RunSpeed, 0, 0}, true, dt);
+            previous = player.position();
+            for (unsigned i = 0; i < rate / 10; ++i)
+                player.step({}, false, dt);
+            CHECK(std::abs(player.position().x - previous.x - 1) < .03f);
+            CHECK(!player.grounded());
+            // Air strafing adds lateral control without erasing forward speed.
+            previous = player.position();
+            for (unsigned i = 0; i < rate / 10; ++i)
+                player.step({0, 0, Player::WalkSpeed}, false, dt);
+            CHECK(std::abs(player.position().x - previous.x - 1) < .03f);
+            CHECK(player.position().z > previous.z + .03f);
+            CHECK(player.position().z < previous.z + .1f);
+
+            // Reset clears momentum; measure the full vertical arc separately.
+            player.reset({0, 0, 0});
+            player.step({}, false, dt);
+            CHECK(glm::length(player.position()) < .05f);
+            player.step({}, true, dt);
+            float maximum = player.position().y;
+            unsigned ticks = 1;
+            while (!player.grounded() && ticks < rate)
+            {
+                player.step({}, false, dt);
+                maximum = std::max(maximum, player.position().y);
+                ++ticks;
+            }
+            CHECK(player.grounded());
+            CHECK(maximum > 1.2f && maximum < 1.4f);
+            CHECK(ticks * dt > .6f && ticks * dt < .8f);
+            if (rate == 30)
+                referenceHeight = maximum;
+            CHECK(std::abs(maximum - referenceHeight) < .03f);
+        }
         return true;
     }
 
@@ -219,6 +306,7 @@ namespace
             CHECK(player.grounded());
             CHECK(std::abs(player.position().y) < .05f);
             CHECK(interpolationChecks(player, error));
+            CHECK(movementChecks(player, error));
             player.reset(result.entry.position);
             for (int i = 0; i < 180; ++i)
                 player.step({0, 0, -4}, false, 1.0f / 60);
@@ -286,6 +374,6 @@ int main()
 {
     if (!checks())
         return 1;
-    std::puts("Level build/load, collision, jumping, render interpolation, reset and exit checks passed");
+    std::puts("Level build/load, collision, movement, jumping, render interpolation, reset and exit checks passed");
     return 0;
 }

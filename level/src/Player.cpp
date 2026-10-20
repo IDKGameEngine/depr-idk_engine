@@ -8,6 +8,17 @@
 
 namespace idk::level
 {
+    namespace
+    {
+        constexpr float GroundAcceleration = 14.0f;
+        constexpr float GroundFriction = 8.0f;
+        constexpr float StopSpeed = 2.5f;
+        constexpr float AirAcceleration = 10.0f;
+        constexpr float AirWishSpeed = .8f;
+        constexpr float Gravity = 20.0f;
+        constexpr float JumpSpeed = 7.2f;
+    }
+
     Player::~Player()
     {
         shutdown();
@@ -59,21 +70,53 @@ namespace idk::level
         mPreviousPosition = position();
     }
 
-    void Player::step(glm::vec3 movement, bool jump, float dt)
+    void Player::step(glm::vec3 wishVelocity, bool jump, float dt)
     {
         if (!mCharacter || !std::isfinite(dt) || dt <= 0)
             return;
         dt = std::min(dt, 1.0f / 30);
         mPreviousPosition = position();
         auto &character = *mCharacter;
-        float vertical = character.GetLinearVelocity().GetY();
-        if (grounded() && vertical <= .1f)
-            vertical = jump ? 5.0f : 0;
-        character.SetLinearVelocity(JPH::Vec3(movement.x, vertical - 9.81f * dt, movement.z));
+        wishVelocity.y = 0;
+        float wishSpeed = glm::length(wishVelocity);
+        glm::vec3 direction = wishSpeed > 0 ? wishVelocity / wishSpeed : glm::vec3(0);
+        // Keep acceleration, friction and jump arcs consistent at 30/60/120 Hz.
+        unsigned steps = unsigned(std::ceil(dt * 120.0f));
+        float step = dt / steps;
         JPH::CharacterVirtual::ExtendedUpdateSettings settings;
-        character.ExtendedUpdate(dt, JPH::Vec3(0, -9.81f, 0), settings,
-                                 mWorld->mImpl->system.GetDefaultBroadPhaseLayerFilter(0),
-                                 mWorld->mImpl->system.GetDefaultLayerFilter(0), {}, {}, mWorld->mImpl->temporary);
+        for (unsigned i = 0; i < steps; ++i)
+        {
+            auto velocity = character.GetLinearVelocity();
+            glm::vec3 horizontal(velocity.GetX(), 0, velocity.GetZ());
+            float vertical = velocity.GetY();
+            bool onGround = grounded() && vertical <= .1f;
+            bool jumping = onGround && jump;
+            jump = false;
+            if (onGround)
+                vertical = jumping ? JumpSpeed : 0;
+            if (onGround && !jumping)
+            {
+                float speed = glm::length(horizontal);
+                if (speed > 0)
+                {
+                    float drop = std::max(speed, StopSpeed) * GroundFriction * step;
+                    horizontal *= std::max(0.0f, speed - drop) / speed;
+                }
+            }
+            // Accelerate along the requested direction, retaining perpendicular
+            // momentum. Air steering only adds a small directional component.
+            float limit = onGround ? wishSpeed : std::min(wishSpeed, AirWishSpeed);
+            float remaining = limit - glm::dot(horizontal, direction);
+            if (remaining > 0)
+            {
+                float acceleration = onGround ? GroundAcceleration : AirAcceleration;
+                horizontal += direction * std::min(remaining, acceleration * wishSpeed * step);
+            }
+            character.SetLinearVelocity(JPH::Vec3(horizontal.x, vertical - Gravity * step, horizontal.z));
+            character.ExtendedUpdate(step, JPH::Vec3(0, -Gravity, 0), settings,
+                                     mWorld->mImpl->system.GetDefaultBroadPhaseLayerFilter(0),
+                                     mWorld->mImpl->system.GetDefaultLayerFilter(0), {}, {}, mWorld->mImpl->temporary);
+        }
     }
 
     glm::vec3 Player::position() const

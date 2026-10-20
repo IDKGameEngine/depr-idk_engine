@@ -124,6 +124,15 @@ nonuniformly scaled, and mirrored shapes. Planes collide from both sides. The
 controller supports gravity, ground contact, slopes, stepping, and jumping.
 Falling 50 metres below the lowest terrain vertex restarts the player.
 
+Movement uses a Source-inspired acceleration model: 6 m/s normally and 10 m/s
+with Shift, quick ground acceleration, and friction that stops the player
+promptly after releasing movement. Diagonal input has the same target speed.
+Jumping preserves horizontal momentum; releasing movement in the air does not
+stop the player, and air strafing provides limited directional control.
+Gravity is 20 m/s² and jump speed is 7.2 m/s, giving roughly a 1.25-metre rise
+and a 0.7-second jump on flat ground. Movement and collision are substepped at
+up to 1/120 second to keep the response consistent across fixed update rates.
+
 Player physics runs at the engine's fixed rate (30 Hz by default). The camera
 interpolates the last two physics positions using the fixed timer's remaining
 fraction, so movement renders smoothly at the display frame rate. Mouse look
@@ -211,7 +220,8 @@ SDL_VIDEODRIVER=offscreen SDL_AUDIODRIVER=dummy \
 
 The CPU tests cover compilation, mirrored geometry, artifact roundtrips,
 corrupt/truncated files, arena rollback, source/output preservation, capsule
-grounding, wall collision, jumping, restart, plane collision, and exit detection.
+grounding, wall collision, movement speed, braking, air momentum and steering,
+jump height/timing at 30/60/120 Hz, restart, plane collision, and exit detection.
 The offscreen command also checks real graphics initialization and level upload.
 The runner test repeatedly swaps rendered and collidable levels, checks queued
 commit timing, staged collision isolation, missing/corrupt destinations, root
